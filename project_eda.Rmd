@@ -22,7 +22,7 @@ predictors = c("RIAGENDR", "RIDAGEYR", "RIDRETH3", "DMDEDUC2", "DMDMARTL", "DMDF
                "CBD070", "CBD120", "CBD130", 
                "DBD895", "DBD900", "DBQ197", 
                "DPQ020", "DPQ030",
-               "PAQ710", "PAQ715", 
+               "PAQ710", 
                "SLD010H", "SMQ040")
 
 columns = c(predictors, response)
@@ -34,7 +34,7 @@ df = rename(df, gender = RIAGENDR, age = RIDAGEYR, race = RIDRETH3, edu = DMDEDU
             marriage = DMDMARTL, famsize = DMDFMSIZ, famincome = INDFMIN2,
             alcohol12yr = ALQ101, alcoholfrq = ALQ120Q, grocery = CBD070, eatout = CBD120,
             delivery = CBD130, milk = DBQ197, meals_nothome = DBD895, meals_fastfood = DBD900,
-            depressed = DPQ020, sleep_trouble = DPQ030, tv_hrs = PAQ710, pc_hrs = PAQ715,
+            depressed = DPQ020, sleep_trouble = DPQ030, tv_hrs = PAQ710,
             sleep_hr = SLD010H, smoke = SMQ040, bmi = BMXBMI)
 
 # subset the df to consider only adults aged 18 or above
@@ -47,30 +47,47 @@ for (feature in drop_obs){
   df_adult = df_adult[!is.na(df_adult[feature]),]
 }
 
-# encode 
-df_adult$alcoholfrq[which(df_adult$alcoholfrq == 999)] = -1
-df_adult$alcoholfrq[which(is.na(df_adult$alcoholfrq))] = -1
+# # encode 
+# df_adult$alcoholfrq[which(df_adult$alcoholfrq == 999)] = -1
+# df_adult$alcoholfrq[which(is.na(df_adult$alcoholfrq))] = -1
+# 
+# df_adult$alcohol12yr[which(is.na(df_adult$alcohol12yr))] = -1
 
-df_adult$alcohol12yr[which(is.na(df_adult$alcohol12yr))] = -1
+df_adult = df_adult[(df_adult$grocery!=777777 & df_adult$grocery!=999999),]
+df_adult = df_adult[(df_adult$eatout!=777777 & df_adult$grocery!=999999),]
+df_adult = df_adult[(df_adult$delivery!=777777 & df_adult$grocery!=999999),]
+
+df_adult = df_adult[which(df_adult$alcoholfrq != 999),]
+
+df_adult = df_adult[which(df_adult$meals_nothome != 5555),]
+df_adult = df_adult[which(df_adult$meals_nothome != 7777),]
+df_adult = df_adult[which(df_adult$meals_nothome != 9999),]
+
+df_adult = df_adult[which(df_adult$meals_fastfood != 5555),]
+df_adult = df_adult[which(df_adult$meals_fastfood != 7777),]
+df_adult = df_adult[which(df_adult$meals_fastfood != 9999),]
 
 df_adult$tv_hrs[which(df_adult$tv_hrs == 0)] = 1
 df_adult$tv_hrs[which(df_adult$tv_hrs == 8)] = 0
 df_adult = df_adult[which(df_adult$tv_hrs != 77),]
 df_adult = df_adult[which(df_adult$tv_hrs != 99),]
 
+df_adult = df_adult[which(df_adult$sleep_hr != 99),]
+
+df_adult$smoke[which(is.na(df_adult$smoke))] = "missing"
+
 categorical_features = c("gender", "race", "edu", "marriage",
                          "famincome", "alcohol12yr", "milk", "depressed", 
-                         "sleep_trouble", "smoke")
+                         "sleep_trouble", "smoke", "tv_hrs")
 
 numeric_features = c("age", "famsize", "alcoholfrq", "grocery", "eatout",
-                     "delivery", "meals_nothome", "meals_fastfood", "tv_hrs",
-                     "pc_hrs", "sleep_hr")
+                     "delivery", "meals_nothome", "meals_fastfood", "sleep_hr")
 
 # convert categorical variables into factors
 for (feature in categorical_features){
-  df_adult[feature] = as.factor(df_adult$feature)
+    df_adult$feature= as.factor(df_adult$feature)
 }
-
+df_adult$gender
 
 apply(df_adult, 2, function(x) sum(is.na(x))) # check how many missing data
 sapply(df_adult, class) # check data classes
