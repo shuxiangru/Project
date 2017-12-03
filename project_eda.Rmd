@@ -84,10 +84,7 @@ numeric_features = c("age", "famsize", "alcoholfrq", "grocery", "eatout",
                      "delivery", "meals_nothome", "meals_fastfood", "sleep_hr")
 
 # convert categorical variables into factors
-for (feature in categorical_features){
-    df_adult$feature= as.factor(df_adult$feature)
-}
-df_adult$gender
+df_adult[categorical_features] = lapply(df_adult[categorical_features], factor)
 
 apply(df_adult, 2, function(x) sum(is.na(x))) # check how many missing data
 sapply(df_adult, class) # check data classes
