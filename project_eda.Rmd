@@ -53,9 +53,10 @@ df_adult$alcoholfrq[which(is.na(df_adult$alcoholfrq))] = -1
 
 df_adult$alcohol12yr[which(is.na(df_adult$alcohol12yr))] = -1
 
-
-
-
+df_adult$tv_hrs[which(df_adult$tv_hrs == 0)] = 1
+df_adult$tv_hrs[which(df_adult$tv_hrs == 8)] = 0
+df_adult = df_adult[which(df_adult$tv_hrs != 77),]
+df_adult = df_adult[which(df_adult$tv_hrs != 99),]
 
 categorical_features = c("gender", "race", "edu", "marriage",
                          "famincome", "alcohol12yr", "milk", "depressed", 
