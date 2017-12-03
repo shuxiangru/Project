@@ -35,17 +35,28 @@ df = rename(df, gender = RIAGENDR, age = RIDAGEYR, race = RIDRETH3, edu = DMDEDU
             alcohol12yr = ALQ101, alcoholfrq = ALQ120Q, grocery = CBD070, eatout = CBD120,
             delivery = CBD130, milk = DBQ197, meals_nothome = DBD895, meals_fastfood = DBD900,
             depressed = DPQ020, sleep_trouble = DPQ030, tv_hrs = PAQ710, pc_hrs = PAQ715,
-            sleep_hr = SLD010H, smoke = SMQ040)
+            sleep_hr = SLD010H, smoke = SMQ040, bmi = BMXBMI)
 
 
 # subset the df to consider only adults aged 18 or above
-df_adult = df[df$age > 18,]
+df_adult = df[df$age > 20,]
 
 apply(df_adult, 2, function(x) sum(is.na(x))) # check how many missing data
 sapply(df_adult, class) # check data classes
 
 ```
 
+```{r}
+hist(df_adult$bmi)
+hist(log(log(df_adult$bmi)))
+hist(log(df_adult$bmi))
+y = log(log(df_adult$bmi))
+plot(df_adult$gender,y)
+plot(df_adult$age,y)
+
+
+
+```
 
 
 
