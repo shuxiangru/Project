@@ -1,0 +1,32 @@
+---
+title: "project_eda"
+output: pdf_document
+---
+
+```{r data_preprocessing}
+library(dplyr)
+# lab = read.csv("data/health/labs.csv")
+demographics = read.csv("data/health/demographic.csv")
+diet = read.csv("data/health/diet.csv")
+ques = read.csv("data/health/questionnaire.csv")
+exam = read.csv("data/health/examination.csv")
+
+# join tables by participant ID
+df = inner_join(demographics, diet, by="SEQN")
+df = inner_join(df, ques, by="SEQN")
+df = inner_join(df, exam, by="SEQN")
+dim(df)
+
+# subset the df to consider only the variables that we're interested in
+
+
+# check if there is any missing values
+
+# drop missing values if it is a small portion
+sapply(demographics, class) # check data classes
+apply(demographics, 2, function(x) any(is.na(x))) # check if there is any missing data
+```
+
+
+
+
