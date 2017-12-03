@@ -7,24 +7,34 @@ output: pdf_document
 library(dplyr)
 # lab = read.csv("data/health/labs.csv")
 demographics = read.csv("data/health/demographic.csv")
-diet = read.csv("data/health/diet.csv")
 ques = read.csv("data/health/questionnaire.csv")
 exam = read.csv("data/health/examination.csv")
 
 # join tables by participant ID
-df = inner_join(demographics, diet, by="SEQN")
-df = inner_join(df, ques, by="SEQN")
+df = inner_join(demographics, ques, by="SEQN")
 df = inner_join(df, exam, by="SEQN")
 dim(df)
 
-# subset the df to consider only the variables that we're interested in
+# subset df_adult to consider only the variables we're interested in
+response = "BMXBMI"
+predictors = c("RIAGENDR", "RIDAGEYR", "RIDRETH3", "DMDEDUC2", "DMDMARTL", "RIDEXPRG", "DMDFMSIZ", "INDFMIN2", 
+               "ALQ101", "ALQ120Q", 
+               "CBD070", "CBD090", "CBD120", "CBD130", 
+               "DBD895", "DBD900", "DBQ197", 
+               "DPQ020", "DPQ030",
+               "PAQ710", "PAQ715", 
+               "SLD010H", "SMQ040")
 
+columns = c(predictors, response)
 
-# check if there is any missing values
+df = df[names(df) %in% columns]
 
-# drop missing values if it is a small portion
-sapply(demographics, class) # check data classes
-apply(demographics, 2, function(x) any(is.na(x))) # check if there is any missing data
+# subset the df to consider only adults aged 18 or above
+df_adult = df[df$RIDAGEYR > 18,]
+
+apply(df_adult, 2, function(x) sum(is.na(x))) # check how many missing data
+sapply(df_adult, class) # check data classes
+
 ```
 
 
