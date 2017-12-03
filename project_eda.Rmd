@@ -40,19 +40,6 @@ df = rename(df, gender = RIAGENDR, age = RIDAGEYR, race = RIDRETH3, edu = DMDEDU
 # subset the df to consider only adults aged 18 or above
 df_adult = df[df$age > 20,]
 
-# drop observations where number of missing value in certain columns is < 100
-drop_obs = c("famincome", "grocery", "eatout", "delivery", "sleep_hr", "bmi")
-
-for (feature in drop_obs){
-  df_adult = df_adult[!is.na(df_adult[feature]),]
-}
-
-# # encode 
-# df_adult$alcoholfrq[which(df_adult$alcoholfrq == 999)] = -1
-# df_adult$alcoholfrq[which(is.na(df_adult$alcoholfrq))] = -1
-# 
-# df_adult$alcohol12yr[which(is.na(df_adult$alcohol12yr))] = -1
-
 df_adult = df_adult[(df_adult$grocery!=777777 & df_adult$grocery!=999999),]
 df_adult = df_adult[(df_adult$eatout!=777777 & df_adult$grocery!=999999),]
 df_adult = df_adult[(df_adult$delivery!=777777 & df_adult$grocery!=999999),]
@@ -75,6 +62,14 @@ df_adult = df_adult[which(df_adult$tv_hrs != 99),]
 df_adult = df_adult[which(df_adult$sleep_hr != 99),]
 
 df_adult$smoke[which(is.na(df_adult$smoke))] = "missing"
+
+# drop observations where number of missing value in certain columns is < 100
+drop_obs = c("famincome", "grocery", "eatout", "delivery", 
+             "sleep_hr","depressed", "sleep_trouble", "bmi")
+
+for (feature in drop_obs){
+  df_adult = df_adult[!is.na(df_adult[feature]),]
+}
 
 categorical_features = c("gender", "race", "edu", "marriage",
                          "famincome", "alcohol12yr", "milk", "depressed", 
