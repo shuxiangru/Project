@@ -184,7 +184,7 @@ grid.arrange(plot1, plot2, plot3, plot4, plot5, plot6, plot7, plot8, plot9,ncol=
           
 Response vs. numeric distribution
 ```{r fig.height=9, fig.width=10, fig.align="center", warning=FALSE}
-df_adult$log2alcoholfrq = log(log(df_adult$alcoholfrq + 1))
+df_adult$log.alcoholfrq = log(df_adult$alcoholfrq + 1)
 df_adult$log.grocery = log(df_adult$grocery + 1)
 df_adult$log.eatout = log(df_adult$eatout + 1)
 df_adult$log.delivery = log(df_adult$delivery + 1)  
@@ -194,7 +194,7 @@ plot1 = ggplot(df_adult, aes(x=age, y=log2bmi)) + geom_point() +
   ggtitle("Age")
 plot2 = ggplot(df_adult, aes(x=famsize, y=log2bmi)) + geom_point() + 
   ggtitle("Family Size")
-plot3 = ggplot(df_adult, aes(x=log2alcoholfrq, y=log2bmi)) + geom_point() + 
+plot3 = ggplot(df_adult, aes(x=log.alcoholfrq, y=log2bmi)) + geom_point() + 
   ggtitle("Frequency of Alcohol Consumption")
 plot4 = ggplot(df_adult, aes(x=log.grocery, y=log2bmi)) + geom_point() + 
   ggtitle("Money Spent on Grocery")
@@ -220,7 +220,7 @@ plot1 = ggplot(df_adult, aes(x=age, y=log2bmi, colour=edu)) + geom_point() +
   ggtitle("Age")
 plot2 = ggplot(df_adult, aes(x=famsize, y=log2bmi, colour=edu)) + geom_point() + 
   ggtitle("Family Size")
-plot3 = ggplot(df_adult, aes(x=log2alcoholfrq, y=log2bmi, colour=edu)) + geom_point() + 
+plot3 = ggplot(df_adult, aes(x=log.alcoholfrq, y=log2bmi, colour=edu)) + geom_point() + 
   ggtitle("Frequency of Alcohol Consumption")
 plot4 = ggplot(df_adult, aes(x=log.grocery, y=log2bmi, colour=edu)) + geom_point() + 
   ggtitle("Money Spent on Grocery")
