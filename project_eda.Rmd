@@ -184,18 +184,23 @@ grid.arrange(plot1, plot2, plot3, plot4, plot5, plot6, plot7, plot8, plot9,ncol=
           
 Response vs. numeric distribution
 ```{r fig.height=9, fig.width=10, fig.align="center", warning=FALSE}
+df_adult$log2alcoholfrq = log(log(df_adult$alcoholfrq + 1))
+df_adult$log.grocery = log(df_adult$grocery + 1)
+df_adult$log.eatout = log(df_adult$eatout + 1)
+df_adult$log.delivery = log(df_adult$delivery + 1)  
+
 # numeric predictor variable distributions
 plot1 = ggplot(df_adult, aes(x=age, y=log2bmi)) + geom_point() + 
   ggtitle("Age")
 plot2 = ggplot(df_adult, aes(x=famsize, y=log2bmi)) + geom_point() + 
   ggtitle("Family Size")
-plot3 = ggplot(df_adult, aes(x=alcoholfrq, y=log2bmi)) + geom_point() + 
+plot3 = ggplot(df_adult, aes(x=log2alcoholfrq, y=log2bmi)) + geom_point() + 
   ggtitle("Frequency of Alcohol Consumption")
-plot4 = ggplot(df_adult, aes(x=grocery, y=log2bmi)) + geom_point() + 
+plot4 = ggplot(df_adult, aes(x=log.grocery, y=log2bmi)) + geom_point() + 
   ggtitle("Money Spent on Grocery")
-plot5 =ggplot(df_adult, aes(x=eatout, y=log2bmi)) + geom_point() + 
+plot5 =ggplot(df_adult, aes(x=log.eatout, y=log2bmi)) + geom_point() + 
   ggtitle("Money Spent Eating Out")
-plot6 = ggplot(df_adult, aes(x=delivery, y=log2bmi)) + geom_point() + 
+plot6 = ggplot(df_adult, aes(x=log.delivery, y=log2bmi)) + geom_point() + 
   ggtitle("Money Spent on Delivered Food")
 plot7 =ggplot(df_adult, aes(x=meals_nothome, y=log2bmi)) + geom_point() + 
   ggtitle("Number of Meals Not Home Prepared")
@@ -207,4 +212,28 @@ grid.arrange(plot1, plot2, plot3, plot4, plot5, plot6, plot7, plot8, plot9,ncol=
 ```          
 
 
+color by some factor
+
+```{r fig.height=12, fig.width=15, fig.align="center", warning=FALSE}
+# numeric predictor variable distributions
+plot1 = ggplot(df_adult, aes(x=age, y=log2bmi, colour=edu)) + geom_point() + 
+  ggtitle("Age")
+plot2 = ggplot(df_adult, aes(x=famsize, y=log2bmi, colour=edu)) + geom_point() + 
+  ggtitle("Family Size")
+plot3 = ggplot(df_adult, aes(x=log2alcoholfrq, y=log2bmi, colour=edu)) + geom_point() + 
+  ggtitle("Frequency of Alcohol Consumption")
+plot4 = ggplot(df_adult, aes(x=log.grocery, y=log2bmi, colour=edu)) + geom_point() + 
+  ggtitle("Money Spent on Grocery")
+plot5 =ggplot(df_adult, aes(x=log.eatout, y=log2bmi, colour=edu)) + geom_point() + 
+  ggtitle("Money Spent Eating Out")
+plot6 = ggplot(df_adult, aes(x=log.delivery, y=log2bmi, colour=edu)) + geom_point() + 
+  ggtitle("Money Spent on Delivered Food")
+plot7 =ggplot(df_adult, aes(x=meals_nothome, y=log2bmi, colour=edu)) + geom_point() + 
+  ggtitle("Number of Meals Not Home Prepared")
+plot8 = ggplot(df_adult, aes(x=meals_fastfood, y=log2bmi, colour=edu)) + geom_point() + 
+  ggtitle("Number of Fast Food Meals")
+plot9 = ggplot(df_adult, aes(x=sleep_hr, y=log2bmi, colour=edu)) + geom_point() + 
+  ggtitle("Hours of Sleep")
+grid.arrange(plot1, plot2, plot3, plot4, plot5, plot6, plot7, plot8, plot9,ncol=3)
+```          
 
