@@ -40,22 +40,37 @@ df = rename(df, height = BMXHT, gender = RIAGENDR, age = RIDAGEYR, race = RIDRET
 # subset the df to consider only adults aged 18 or above
 df_adult = df[df$age > 20,]
 
+# demographics
+df_adult = df_adult[which(df_adult$edu!=7 & df_adult$edu!=9),]
+df_adult = df_adult[which(df_adult$marriage!=77 & df_adult$marriage!=99),]
+df_adult = df_adult[which(df_adult$famincome!=77 & df_adult$famincome!=99),]
+
+# alcohol use
+df_adult = df_adult[which(df_adult$alcohol12yr!=7 & df_adult$alcohol12yr!=9),]
+df_adult = df_adult[which(df_adult$alcoholfrq!=777 & df_adult$alcoholfrq!=999),]
+
+# consumer behavior
 df_adult = df_adult[which(df_adult$grocery!=777777 & df_adult$grocery!=999999),]
 df_adult = df_adult[which(df_adult$eatout!=777777 & df_adult$eatout!=999999),]
 df_adult = df_adult[which(df_adult$delivery!=777777 & df_adult$delivery!=999999),]
 
-df_adult = df_adult[which(df_adult$alcoholfrq != 999),]
-
+# diet behavior
 df_adult = df_adult[which(df_adult$meals_nothome != 5555 & df_adult$meals_nothome != 7777 & df_adult$meals_nothome != 9999),]
-
 df_adult = df_adult[which(df_adult$meals_fastfood != 5555 & df_adult$meals_fastfood != 7777 & df_adult$meals_fastfood != 9999),]
 
+# physical activity
 df_adult$tv_hrs[which(df_adult$tv_hrs == 0)] = 1
 df_adult$tv_hrs[which(df_adult$tv_hrs == 8)] = 0
 df_adult = df_adult[which(df_adult$tv_hrs != 77 & df_adult$tv_hrs != 99),]
 
+# mental health
+df_adult = df_adult[which(df_adult$depressed!=7 & df_adult$depressed!=9),]
+df_adult = df_adult[which(df_adult$sleep_trouble!=7 & df_adult$sleep_trouble!=9),]
+
+# sleeping behavior
 df_adult = df_adult[which(df_adult$sleep_hr != 99),]
 
+# smoking behavior
 df_adult$smoke[which(is.na(df_adult$smoke))] = "missing"
 
 # drop observations where number of missing value in certain columns is < 100
