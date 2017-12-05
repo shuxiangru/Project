@@ -303,7 +303,7 @@ diagnostic.plots(model1)
 
 ```{r}
 #model 2 with all the interaction terms
-model2 = lm(log.weight~(gender+age+race+edu+marriage+famsize+famincome+alcohol12yr+alcoholfrq+grocery+eatout+delivery+milk+meals_nothome+meals_fastfood+depressed+sleep_trouble+tv_hrs+sleep_hr+smoke)^2, data = df_adult)
+model2 = lm(log.weight~(gender+age+race+edu+marriage+famsize+famincome+alcohol12yr+log.alcoholfrq+log.grocery+log.eatout+log.delivery+milk+log.nothome+log.fastfood+depressed+sleep_trouble+tv_hrs+sleep_hr+smoke+height)^2, data = df_adult)
 summary(model2)
 extractAIC(model2)
 ```
