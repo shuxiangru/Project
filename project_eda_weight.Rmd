@@ -186,10 +186,12 @@ grid.arrange(plot1, plot2, plot3, plot4, plot5, plot6, plot7, plot8, plot9, plot
           
 Response vs. numeric distribution
 ```{r fig.height=9, fig.width=10, fig.align="center", warning=FALSE}
-# df_adult$log.alcoholfrq = log(df_adult$alcoholfrq + 1)
-# df_adult$log.grocery = log(df_adult$grocery + 1)
-# df_adult$log.eatout = log(df_adult$eatout + 1)
-# df_adult$log.delivery = log(df_adult$delivery + 1)  
+df_adult$log.alcoholfrq = log(df_adult$alcoholfrq + 1)
+df_adult$log.grocery = log(df_adult$grocery + 1)
+df_adult$log.eatout = log(df_adult$eatout + 1)
+df_adult$log.delivery = log(df_adult$delivery + 1)
+df_adult$log.nothome = log(df_adult$meals_nothome + 1)
+df_adult$log.fastfood = log(df_adult$meals_fastfood + 1)
 
 # numeric predictor variable distributions
 plot1 = ggplot(df_adult, aes(x=age, y=log.weight)) + geom_point() + 
@@ -252,3 +254,101 @@ parallel corrd plot to figure out if interaction may be helpful
 # predictor = c("sleep_hr", "age", "log.delivery", "meals_nothome", "meals_fastfood")
 # parcoord(df_adult[,predictor], col=k)
 ```
+
+```{r}
+df_adult
+```
+```{r}
+#model 1 with all main effects
+model1 = lm(log.weight~gender+age+race+edu+marriage+famsize+famincome+alcohol12yr+log.alcoholfrq+log.grocery+log.eatout+log.delivery+milk+log.nothome+log.fastfood+depressed+sleep_trouble+tv_hrs+sleep_hr+smoke+height, data = df_adult)
+summary(model1)
+extractAIC(model1)
+```
+```{r}
+plot(predict(model1), resid(model1))
+abline(0,0)
+hist(resid(model1))
+```
+```{r}
+diagnostic.plots = function(model)
+{
+  resid = data.frame(resid = model$residuals)
+  
+  # calculate qq line
+  y = quantile(resid$resid, c(0.25, 0.75)) # Find the 1st and 3rd quartiles
+  x = qnorm( c(0.25, 0.75))          # Find the matching normal values on the x-axis
+  slope = diff(y) / diff(x)          # Compute the line slope
+  int = y[1] - slope * x[1]          # Compute the line intercept
+  
+  # qq plot
+  qq.plot = ggplot(resid, aes(sample = resid)) +
+    stat_qq() +
+    geom_abline(intercept = int, slope = slope)
+  
+  
+  # Fitted values vs residuals to check equal variance
+  var.plot = ggplot(model, aes(.fitted, sqrt(abs(.stdresid)))) + 
+      geom_point(na.rm = TRUE) + 
+      stat_smooth(method = "loess", na.rm = TRUE) + 
+      xlab("Fitted Value") + 
+      ylab(expression(sqrt("|Standardized residuals|"))) +
+      ggtitle("Scale-Location") +
+      theme_bw()
+  
+  grid.arrange(qq.plot, var.plot)
+}
+diagnostic.plots(model1)
+```
+
+
+```{r}
+#model 2 with all the interaction terms
+model2 = lm(log.weight~(gender+age+race+edu+marriage+famsize+famincome+alcohol12yr+alcoholfrq+grocery+eatout+delivery+milk+meals_nothome+meals_fastfood+depressed+sleep_trouble+tv_hrs+sleep_hr+smoke)^2, data = df_adult)
+summary(model2)
+extractAIC(model2)
+```
+
+```{r}
+#forward selection from intercept only
+model3 = step(lm(log.weight~1, data = df_adult), scope = list(upper = model2), direction = "forward", trace = 0)
+summary(model3)
+extractAIC(model3)
+```
+```{r}
+extractAIC(model1)
+extractAIC(model2)
+extractAIC(model3)
+```
+```{r warning=FALSE}
+library(caret)
+set.seed(12345)
+nsims=500
+n=nrow(df_adult)
+sse1 = rep(NA,nsims)
+n.train = 1500
+for(i in 1:nsims){
+  
+  categorical_partition = paste(df_adult$marriage, df_adult$race, df_adult$gender,df_adult$famincome,
+                                df_adult$edu, df_adult$alcohol12yr, df_adult$milk, df_adult$smoke,
+                                df_adult$tv_hrs, df_adult$sleep_trouble, df_adult$depressed)
+  reorder= createDataPartition(categorical_partition, times = 1, p = 0.5, list = FALSE)
+
+  train=df_adult[reorder,]
+  test=df_adult[-reorder,]
+  
+  ###fit1: result of model 1
+  fit1=lm(log.weight ~ gender + race + tv_hrs + smoke + edu + 
+    age + marriage + milk + depressed + meals_nothome + alcoholfrq + 
+    meals_fastfood + gender:smoke + gender:race + age:marriage + 
+    smoke:marriage + smoke:depressed + age:meals_nothome + gender:edu + 
+    gender:meals_nothome + race:meals_fastfood + age:meals_fastfood ,data=train)
+
+  
+  sse1[i]=sum((test$log.weight-predict(fit1,new=test))^2)
+
+
+}
+
+c(mean(sse1))
+```
+
