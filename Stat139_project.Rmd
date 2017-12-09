@@ -379,7 +379,12 @@ grid.arrange(plot1, plot3, plot4, plot5, plot6, plot7, plot8, plot9, plot10, nco
 
 ### Models
 ```{r}
-df_adult
+#df_adult
+check_assumptions <- function(model){
+  hist(resid(model),col="grey",breaks=15)
+  plot(resid(model)~fitted(model),cex=1.5)
+  abline(h=0,lwd=2)
+}
 ```
 
 ```{r}
@@ -427,4 +432,9 @@ anova(model1, model2)
 ```
 
 
+```{r}
+
+check_assumptions(model1a)
+
+```
 
