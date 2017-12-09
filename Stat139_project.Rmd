@@ -377,9 +377,48 @@ grid.arrange(plot1, plot3, plot4, plot5, plot6, plot7, plot8, plot9, plot10, nco
 
 
 
+### Models
+```{r}
+df_adult
+```
+
+```{r}
+#baseline model
+model1 = lm(log2.bmi~gender+age+race+edu+marriage+famsize+famincome+alcohol12yr+alcoholfrq+log.grocery+log.eatout+log.delivery+milk+meals_nothome+meals_fastfood+depressed+sleep_trouble+activity+tv_hrs+sleep_hr+smoke, data = df_adult)
+summary(model1)
+```
+
+```{r}
+#backward selection from model1
+model1a = step(model1, trace = 0, direction = "backward")
+summary(model1a)
+extractAIC(model1a)
+```
+```{r}
+#full model with all the 2 way interactions
+model_interact = lm(log2.bmi ~ (gender+age+race+edu+marriage+famsize+famincome+alcohol12yr+alcoholfrq+log.grocery+log.eatout+log.delivery+milk+meals_nothome+meals_fastfood+depressed+sleep_trouble+activity+tv_hrs+sleep_hr+smoke)^2, data = df_adult)
+summary(model_interact)
+```
+
+
+```{r}
+#forward selection from intercept only model to full model
+model1b = step(lm(log2.bmi ~ 1, data = df_adult), scope = list(upper = model_interact), direction = "forward", trace = 0)
+summary(model1b)
+extractAIC(model1b)
+```
+
+```{r}
+# Based on model1, add interaction terms between famsize and (famincome, log.grocery, log.eatout and log.delivery)
+model2 = lm(log2.bmi~gender+age+race+edu+marriage+famsize+famincome+alcohol12yr+alcoholfrq+log.grocery+log.eatout+log.delivery+milk+meals_nothome+meals_fastfood+depressed+sleep_trouble+activity+tv_hrs+sleep_hr+smoke + famsize*famincome + famsize*log.grocery+famsize*log.eatout + famsize*log.delivery, data = df_adult)
+summary(model2)
+```
 
 
 
+```{r}
+anova(model1, model2)
+```
 
 
 
