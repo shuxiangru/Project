@@ -387,16 +387,22 @@ df_adult
 model1 = lm(log2.bmi~gender+age+race+edu+marriage+famsize+famincome+alcohol12yr+alcoholfrq+log.grocery+log.eatout+log.delivery+milk+meals_nothome+meals_fastfood+depressed+sleep_trouble+activity+tv_hrs+sleep_hr+smoke, data = df_adult)
 summary(model1)
 ```
+```{r}
+# add sleep^2 to basemodel
+df_adult["sleep_hr2"] = (df_adult$sleep_hr)^2
+model_sleep = lm(log2.bmi ~ gender+age+race+edu+marriage+famsize+famincome+alcohol12yr+alcoholfrq+log.grocery+log.eatout+log.delivery+milk+meals_nothome+meals_fastfood+depressed+sleep_trouble+activity+tv_hrs+sleep_hr+smoke + sleep_hr2, data = df_adult)
+summary(model_sleep)
+```
 
 ```{r}
-#backward selection from model1
-model1a = step(model1, trace = 0, direction = "backward")
+#backward selection from model_sleep
+model1a = step(model_sleep, trace = 0, direction = "backward")
 summary(model1a)
 extractAIC(model1a)
 ```
 ```{r}
-#full model with all the 2 way interactions
-model_interact = lm(log2.bmi ~ (gender+age+race+edu+marriage+famsize+famincome+alcohol12yr+alcoholfrq+log.grocery+log.eatout+log.delivery+milk+meals_nothome+meals_fastfood+depressed+sleep_trouble+activity+tv_hrs+sleep_hr+smoke)^2, data = df_adult)
+#full model with all the 2 way interactions(including sleep_hr2)
+model_interact = lm(log2.bmi ~ (gender+age+race+edu+marriage+famsize+famincome+alcohol12yr+alcoholfrq+log.grocery+log.eatout+log.delivery+milk+meals_nothome+meals_fastfood+depressed+sleep_trouble+activity+tv_hrs+sleep_hr+smoke + sleep_hr2)^2, data = df_adult)
 summary(model_interact)
 ```
 
