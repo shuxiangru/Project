@@ -387,42 +387,50 @@ check_assumptions <- function(model){
 }
 ```
 
-```{r}
+```{r fig.height=3, fig.width=3, fig.align="center"}
 #baseline model
 model1 = lm(log2.bmi~gender+age+race+edu+marriage+famsize+famincome+alcohol12yr+alcoholfrq+log.grocery+log.eatout+log.delivery+milk+meals_nothome+meals_fastfood+depressed+sleep_trouble+activity+tv_hrs+sleep_hr+smoke, data = df_adult)
 summary(model1)
+check_assumptions(model1)
 ```
-```{r}
+
+```{r fig.height=3, fig.width=3, fig.align="center"}
 # add sleep^2 to basemodel
 df_adult["sleep_hr2"] = (df_adult$sleep_hr)^2
 model_sleep = lm(log2.bmi ~ gender+age+race+edu+marriage+famsize+famincome+alcohol12yr+alcoholfrq+log.grocery+log.eatout+log.delivery+milk+meals_nothome+meals_fastfood+depressed+sleep_trouble+activity+tv_hrs+sleep_hr+smoke + sleep_hr2, data = df_adult)
 summary(model_sleep)
+check_assumptions(model_sleep)
 ```
 
-```{r}
+```{r fig.height=3, fig.width=3, fig.align="center"}
 #backward selection from model_sleep
 model1a = step(model_sleep, trace = 0, direction = "backward")
 summary(model1a)
 extractAIC(model1a)
+check_assumptions(model1a)
 ```
-```{r}
+
+```{r fig.height=3, fig.width=3, fig.align="center"}
 #full model with all the 2 way interactions(including sleep_hr2)
 model_interact = lm(log2.bmi ~ (gender+age+race+edu+marriage+famsize+famincome+alcohol12yr+alcoholfrq+log.grocery+log.eatout+log.delivery+milk+meals_nothome+meals_fastfood+depressed+sleep_trouble+activity+tv_hrs+sleep_hr+smoke + sleep_hr2)^2, data = df_adult)
 summary(model_interact)
+check_assumptions(model_interact)
 ```
 
 
-```{r}
+```{r fig.height=3, fig.width=3, fig.align="center"}
 #forward selection from intercept only model to full model
 model1b = step(lm(log2.bmi ~ 1, data = df_adult), scope = list(upper = model_interact), direction = "forward", trace = 0)
 summary(model1b)
 extractAIC(model1b)
+check_assumptions(model1b)
 ```
 
-```{r}
+```{r fig.height=3, fig.width=3, fig.align="center"}
 # Based on model1, add interaction terms between famsize and (famincome, log.grocery, log.eatout and log.delivery)
 model2 = lm(log2.bmi~gender+age+race+edu+marriage+famsize+famincome+alcohol12yr+alcoholfrq+log.grocery+log.eatout+log.delivery+milk+meals_nothome+meals_fastfood+depressed+sleep_trouble+activity+tv_hrs+sleep_hr+smoke + famsize*famincome + famsize*log.grocery+famsize*log.eatout + famsize*log.delivery, data = df_adult)
 summary(model2)
+check_assumptions(model2)
 ```
 
 
@@ -431,12 +439,6 @@ summary(model2)
 anova(model1, model2)
 ```
 
-
-```{r}
-
-check_assumptions(model1a)
-
-```
 
 ```{r}
 #lasso
