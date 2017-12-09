@@ -446,11 +446,36 @@ x.lasso = model.matrix(formula(model_interact), data=df_adult)
 model_lasso = cv.glmnet(x.lasso, df_adult$log2.bmi, nfolds = 5)
 #plot
 plot(model_lasso)
-lambda.min = model_lasso$lambda.min
-mse.min = min(model_lasso$cvm)
+lasso.lambda.min = model_lasso$lambda.min
+lasso.mse.min = min(model_lasso$cvm)
 
 coef.lasso = coef(model_lasso, s = "lambda.min")
-nonzero_coef = cbind(rownames(coef.lasso)[which(coef.lasso != 0)], coef.lasso[which(coef.lasso != 0)])
+nonzero_coef_lasso = cbind(rownames(coef.lasso)[which(coef.lasso != 0)], coef.lasso[which(coef.lasso != 0)])
 
+```
+```{r}
+#ridge
+x.ridge = model.matrix(formula(model_interact), data=df_adult)
+model_ridge = cv.glmnet(x.ridge, df_adult$log2.bmi, alpha = 0, nfolds = 5)
+#plot
+plot(model_ridge)
+ridge.lambda.min = model_ridge$lambda.min
+ridge.mse.min = min(model_ridge$cvm)
+
+coef.ridge = coef(model_ridge, s = "lambda.min")
+nonzero_coef_ridge = cbind(rownames(coef.ridge)[which(coef.ridge != 0)], coef.ridge[which(coef.ridge != 0)])
+```
+
+```{r}
+#elastic net
+x.mix = model.matrix(formula(model_interact), data=df_adult)
+model_mix = cv.glmnet(x.mix, df_adult$log2.bmi, alpha = 0.5, nfolds = 5)
+#plot
+plot(model_mix)
+mix.lambda.min = model_mix$lambda.min
+mix.mse.min = min(model_mix$cvm)
+
+coef.mix = coef(model_mix, s = "lambda.min")
+nonzero_coef_mix = cbind(rownames(coef.mix)[which(coef.mix != 0)], coef.mix[which(coef.mix != 0)])
 ```
 
