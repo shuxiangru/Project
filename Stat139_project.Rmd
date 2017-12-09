@@ -24,6 +24,8 @@ output:
   pdf_document:
     fig_width: 5
     fig_height: 3.5
+  html_document:
+    smart: false
 ---
 
 ## Abstract
@@ -334,8 +336,6 @@ Response vs. numeric distribution
 ```{r fig.height=10, fig.width=10, fig.align="center", warning=FALSE}
 plot1 = ggplot(df_adult, aes(x=age, y=log(bmi))) + geom_point() + 
   ggtitle("Age")
-plot2 = ggplot(df_adult, aes(x=height, y=log(bmi))) + geom_point() + 
-  ggtitle("Height")
 plot3 = ggplot(df_adult, aes(x=famsize, y=log(bmi))) + geom_point() + 
   ggtitle("Family Size")
 plot4 = ggplot(df_adult, aes(x=alcoholfrq, y=log(bmi))) + geom_point() + 
@@ -352,15 +352,13 @@ plot9 = ggplot(df_adult, aes(x=meals_fastfood, y=log(bmi))) + geom_point() +
   ggtitle("Number of Fast Food Meals")
 plot10 = ggplot(df_adult, aes(x=sleep_hr, y=log(bmi))) + geom_point() + 
   ggtitle("Hours of Sleep")
-grid.arrange(plot1, plot2, plot3, plot4, plot5, plot6, plot7, plot8, plot9, plot10, ncol=3)
+grid.arrange(plot1, plot3, plot4, plot5, plot6, plot7, plot8, plot9, plot10, ncol=3)
 ```          
 
 
 ```{r fig.height=10, fig.width=10, fig.align="center", warning=FALSE}
 plot1 = ggplot(df_adult, aes(x=age, y=log(bmi), colour=gender)) + geom_point() + 
   ggtitle("Age")
-plot2 = ggplot(df_adult, aes(x=height, y=log(bmi), colour=gender)) + geom_point() + 
-  ggtitle("Height")
 plot3 = ggplot(df_adult, aes(x=famsize, y=log(bmi), colour=gender)) + geom_point() + 
   ggtitle("Family Size")
 plot4 = ggplot(df_adult, aes(x=log(alcoholfrq), y=log(bmi), colour=gender)) + geom_point() + 
@@ -377,7 +375,7 @@ plot9 = ggplot(df_adult, aes(x=meals_fastfood, y=log(bmi), colour=gender)) + geo
   ggtitle("Number of Fast Food Meals")
 plot10 = ggplot(df_adult, aes(x=sleep_hr, y=log(bmi), colour=gender)) + geom_point() + 
   ggtitle("Hours of Sleep")
-grid.arrange(plot1, plot2, plot3, plot4, plot5, plot6, plot7, plot8, plot9, plot10, ncol=3)
+grid.arrange(plot1, plot3, plot4, plot5, plot6, plot7, plot8, plot9, plot10, ncol=3)
 ```          
 
 
