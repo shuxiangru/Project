@@ -155,6 +155,14 @@ df_adult$tv_hrs[which(df_adult$tv_hrs == 3)]= "2-4hrs"
 df_adult$tv_hrs[which(df_adult$tv_hrs == 4)]= "2-4hrs"
 df_adult$tv_hrs[which(df_adult$tv_hrs == 5)] = "5hrs_or_more"
 
+new_bmi = df_adult$bmi
+df_adult["bmi_class"] = new_bmi
+df_adult$bmi_class[which(df_adult$bmi_class >= 40)] = "class 3 obesity"
+df_adult$bmi_class[which(df_adult$bmi_class >= 30 & df_adult$bmi_class < 40)] = "obese"
+df_adult$bmi_class[which(df_adult$bmi_class >= 25 & df_adult$bmi_class < 30)] = "overweight"
+df_adult$bmi_class[which(df_adult$bmi_class >= 18.5 & df_adult$bmi_class < 25)] = "healthy"
+df_adult$bmi_class[which(df_adult$bmi_class < 18.5)] = "underweight"
+
 # save variable names into lists of categorical or numeric faetures
 categorical_features = c("gender", "race", "edu", "marriage",
                          "famincome", "alcohol12yr", "milk", "depressed", 
@@ -163,11 +171,21 @@ categorical_features = c("gender", "race", "edu", "marriage",
 numeric_features = c("height","age", "famsize", "alcoholfrq", "grocery", "eatout",
                      "delivery", "meals_nothome", "meals_fastfood", "sleep_hr")
 
+#drop famincome 12,13
+df_adult = df_adult[!(df_adult$famincome==12 | df_adult$famincome==13),]
+
 # convert categorical variables into factors
 df_adult[categorical_features] = lapply(df_adult[categorical_features], factor)
 
 levels(df_adult$activity) = c(1, 2)
 levels(df_adult$activity) = c("Yes", "No")
+
+#edu
+levels(df_adult$edu) = c(1, 1, 2, 3, 3)
+levels(df_adult$edu) = c("High School Below", "High School", "High School Above")
+#famincome
+levels(df_adult$famincome) = c(rep(1, 5), rep(2, 3), rep(3, 2), 4, 5 )
+levels(df_adult$famincome) = c("below 25k", "25k~55k", "55k~75k", "75k~100k", "above 100k")
 
 
 apply(df_adult, 2, function(x) sum(is.na(x))) # check how many missing data
