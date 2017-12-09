@@ -59,7 +59,7 @@ output:
 
 ## Appendix
 ### Appendix I: Data preprocessing
-```{r data_preprocessing, warnings=FALSE}
+```{r data_preprocessing, warnings=FALSE, echo=FALSE}
 library(dplyr)
 demographics = read.csv("data/health/demographic.csv")
 ques = read.csv("data/health/questionnaire.csv")
@@ -68,7 +68,6 @@ exam = read.csv("data/health/examination.csv")
 # join tables by participant ID
 df = inner_join(demographics, ques, by="SEQN")
 df = inner_join(df, exam, by="SEQN")
-dim(df)
 
 # subset df to consider only the variables we're interested in
 response = "BMXBMI"
@@ -90,7 +89,7 @@ df = rename(df, gender = RIAGENDR, age = RIDAGEYR, race = RIDRETH3, edu = DMDEDU
             alcohol12yr = ALQ101, alcoholfrq = ALQ120Q, grocery = CBD070, eatout = CBD120,
             delivery = CBD130, milk = DBQ197, meals_nothome = DBD895, meals_fastfood = DBD900,
             depressed = DPQ020, sleep_trouble = DPQ030, tv_hrs = PAQ710,
-            sleep_hr = SLD010H, smoke = SMQ040, bmi = BMXBMI,activity=PAQ665)
+            sleep_hr = SLD010H, smoke = SMQ040, bmi = BMXBMI, activity=PAQ665)
 
 # subset the df to consider only adults aged 20 or above
 df_adult = df[df$age > 20,]
@@ -116,8 +115,6 @@ df_adult = df_adult[which(df_adult$meals_nothome != 5555 & df_adult$meals_nothom
 df_adult = df_adult[which(df_adult$meals_fastfood != 5555 & df_adult$meals_fastfood != 7777 & df_adult$meals_fastfood != 9999),]
 
 # physical activity variables
-#df_adult$tv_hrs[which(df_adult$tv_hrs == 0)] = 1
-#df_adult$tv_hrs[which(df_adult$tv_hrs == 8)] = 0
 df_adult = df_adult[which(df_adult$tv_hrs != 77 & df_adult$tv_hrs != 99),]
 
 # mental health variables
@@ -131,20 +128,12 @@ df_adult = df_adult[which(df_adult$sleep_hr != 99),]
 df_adult$smoke[which(is.na(df_adult$smoke))] = "missing"
 df_adult$smoke[which(is.na(df_adult$activity))] = "missing"
 
-# after dropping observations missing bmi, there were only 3 missing height
-# so we drop these observations too
-drop_obs = c("bmi")
-
-for (feature in drop_obs){
-  df_adult = df_adult[!is.na(df_adult[feature]),]
-}
+# drop missing bmi observatioins
+df_adult = df_adult[!is.na(df_adult$bmi),]
 
 
 # feature engineering
-
-
-new_bmi = df_adult$bmi
-df_adult["bmi_class"] = new_bmi
+df_adult$bmi_class = df_adult$bmi
 df_adult$bmi_class[which(df_adult$bmi_class >= 40)] = "class 3 obesity"
 df_adult$bmi_class[which(df_adult$bmi_class >= 30 & df_adult$bmi_class < 40)] = "obese"
 df_adult$bmi_class[which(df_adult$bmi_class >= 25 & df_adult$bmi_class < 30)] = "overweight"
@@ -165,33 +154,53 @@ df_adult = df_adult[!(df_adult$famincome==12 | df_adult$famincome==13),]
 # convert categorical variables into factors
 df_adult[categorical_features] = lapply(df_adult[categorical_features], factor)
 
+#activity
 levels(df_adult$activity) = c(1, 2)
 levels(df_adult$activity) = c("Yes", "No")
 
+#gender
+levels(df_adult$gender) = c("male", "female")
+
+#race
+levels(df_adult$race) = c("mexican", "other hispanic", "white", "black", "asian", "other")
+
 #edu
 levels(df_adult$edu) = c(1, 1, 2, 3, 3)
-levels(df_adult$edu) = c("High School Below", "High School", "High School Above")
+levels(df_adult$edu) = c("below hs", "hs", "above hs")
+
+#alcohol consumption
+levels(df_adult$alcohol12yr) = c("yes", "no")
+
+#milk
+levels(df_adult$milk) = c("never", "rare", "sometimes", "often", "varied")
+
+# depressed
+levels(df_adult$depressed) = c("no", "sometimes", "often", "alwyas")
+
+# sleep_trouble
+levels(df_adult$sleep_trouble) = c("no", "sometimes", "often", "always")
+
+#smoke
+levels(df_adult$smoke) = c("everyday", "sometimes", "no", "missing")
+  
 #famincome
 levels(df_adult$famincome) = c(rep(1, 5), rep(2, 3), rep(3, 2), 4, 5 )
 levels(df_adult$famincome) = c("below 25k", "25k~55k", "55k~75k", "75k~100k", "above 100k")
 
 #marriage
-levels(df_adult$marriage) = c("married/living_with_partner", "widowed", "divorced/separated", "divorced/separated", "never_married", "married/living_with_partner")
-
+levels(df_adult$marriage) = c("married", "widowed", "divorced", "divorced", "never_married", "married")
 
 #tv_hrs
-levels(df_adult$famincome) = c("1hr_or_less","1hr_or_less", "2-4hrs", "2-4hrs" , "2-4hrs", "5hrs_or_more", "0hr")
+levels(df_adult$tv_hrs) = c("1hr","1hr", "2~4hrs", "2~4hrs" , "2~4hrs", "5hrs", "0hr")
 
 
 apply(df_adult, 2, function(x) sum(is.na(x))) # check how many missing data
 sapply(df_adult, class) # check data classes
-
-
 ```
 
 ### Appendix II: Exploratory Data Analysis
 #### Response Variable (bmi)
-```{r fig.height=3, fig.width=10, fig.align="center", warning=FALSE}
+```{r fig.height=3, fig.width=10, fig.align="center", warning=FALSE, echo=FALSE}
 library(ggplot2)
 require(gridExtra)
 transform1 = log(df_adult$bmi)
@@ -214,61 +223,61 @@ grid.arrange(plot1, plot2, plot3, ncol=3)
 #### Predictor Variables
 
 ##### Categorical Variables
-```{r fig.height=20, fig.width=15, fig.align="center", warning=FALSE}
+```{r fig.height=20, fig.width=15, fig.align="center", warning=FALSE, echo=FALSE}
 plot1 = ggplot(df_adult, aes(x=gender, y = log(bmi))) + geom_boxplot() + 
   theme(axis.text.x = element_text(angle=90)) + 
   labs(x="Gender", y="log(bmi)") + 
-  ggtitle("bmi by Gender") + theme(axis.text=element_text(size=25),axis.title=element_text(size=28,face="bold"),title =element_text(size=30, face='bold'))
+  ggtitle("bmi by Gender") 
 plot2 = ggplot(df_adult, aes(x=race, y = log(bmi))) + geom_boxplot() + 
   theme(axis.text.x = element_text(angle=90)) + 
   labs(x="Race", y="log(bmi)") + 
-  ggtitle("bmi by Race") + theme(axis.text=element_text(size=25),axis.title=element_text(size=28,face="bold"),title =element_text(size=30, face='bold'))
+  ggtitle("bmi by Race")
 plot3 = ggplot(df_adult, aes(x=edu, y = log(bmi))) + geom_boxplot() + 
   theme(axis.text.x = element_text(angle=90)) + 
   labs(x="Education Level", y="log(bmi)") + 
-  ggtitle("bmi by Education Level") + theme(axis.text=element_text(size=25),axis.title=element_text(size=28,face="bold"),title =element_text(size=30, face='bold'))
+  ggtitle("bmi by Education Level") 
 plot4 = ggplot(df_adult, aes(x=marriage, y = log(bmi))) + geom_boxplot() + 
   theme(axis.text.x = element_text(angle=90)) + 
   labs(x="Marital Status", y="log(bmi)") + 
-  ggtitle("bmi by Marital Status") + theme(axis.text=element_text(size=25),axis.title=element_text(size=28,face="bold"),title =element_text(size=30, face='bold'))
+  ggtitle("bmi by Marital Status") 
 plot5 = ggplot(df_adult, aes(x=famincome, y = log(bmi))) + geom_boxplot() + 
   theme(axis.text.x = element_text(angle=90)) + 
   labs(x="Family Income", y="log(bmi)") + 
-  ggtitle("bmi by Family Income") + theme(axis.text=element_text(size=25),axis.title=element_text(size=28,face="bold"),title =element_text(size=30, face='bold'))
+  ggtitle("bmi by Family Income")
 plot6 = ggplot(df_adult, aes(x=alcohol12yr, y = log(bmi))) + geom_boxplot() + 
   theme(axis.text.x = element_text(angle=90)) + 
   labs(x="Alcohol Use", y="log(bmi)") + 
-  ggtitle("bmi by Alcohol Use") + theme(axis.text=element_text(size=25),axis.title=element_text(size=28,face="bold"),title =element_text(size=30, face='bold'))
+  ggtitle("bmi by Alcohol Use") 
 plot7 = ggplot(df_adult, aes(x=milk, y = log(bmi))) + geom_boxplot() + 
   theme(axis.text.x = element_text(angle=90)) + 
   labs(x="Milk Consumption", y="log(bmi)") + 
-  ggtitle("bmi by Milk Consumption") + theme(axis.text=element_text(size=25),axis.title=element_text(size=28,face="bold"),title =element_text(size=30, face='bold'))
+  ggtitle("bmi by Milk Consumption") 
 plot8 = ggplot(df_adult, aes(x=depressed, y = log(bmi))) + geom_boxplot() + 
   theme(axis.text.x = element_text(angle=90)) + 
   labs(x="Depressed", y="log(bmi)") + 
-  ggtitle("bmi by Despressed") + theme(axis.text=element_text(size=25),axis.title=element_text(size=28,face="bold"),title =element_text(size=30, face='bold'))
+  ggtitle("bmi by Despressed") 
 plot9 = ggplot(df_adult, aes(x=sleep_trouble, y = log(bmi))) + geom_boxplot() + 
   theme(axis.text.x = element_text(angle=90)) + 
   labs(x="Alcohol Use", y="log(bmi)") + 
-  ggtitle("bmi by Sleep Trouble") + theme(axis.text=element_text(size=25),axis.title=element_text(size=28,face="bold"),title =element_text(size=30, face='bold'))
+  ggtitle("bmi by Sleep Trouble") 
 plot10 = ggplot(df_adult, aes(x=smoke, y = log(bmi))) + geom_boxplot() + 
   theme(axis.text.x = element_text(angle=90)) + 
   labs(x="Smoke", y="log(bmi)") + 
-  ggtitle("bmi by Smoke") + theme(axis.text=element_text(size=25),axis.title=element_text(size=28,face="bold"),title =element_text(size=30, face='bold'))
+  ggtitle("bmi by Smoke") 
 plot11 = ggplot(df_adult, aes(x=tv_hrs, y = log(bmi))) + geom_boxplot() + 
   theme(axis.text.x = element_text(angle=90)) + 
   labs(x="TV Consumption", y="log(bmi)") + 
-  ggtitle("bmi by TV Consumption") + theme(axis.text=element_text(size=25),axis.title=element_text(size=28,face="bold"),title =element_text(size=30, face='bold'))
+  ggtitle("bmi by TV Consumption")
 plot12 = ggplot(df_adult, aes(x=activity, y = log(bmi))) + geom_boxplot() + 
   theme(axis.text.x = element_text(angle=90)) + 
   labs(x="Moderate Activities At Least 10 min Continuously per Week", y="log(bmi)") + 
-  ggtitle("bmi by Moderate Recreational Activities") + theme(axis.text=element_text(size=25),axis.title=element_text(size=28,face="bold"),title =element_text(size=30, face='bold'))
+  ggtitle("bmi by Moderate Recreational Activities") 
 grid.arrange(plot1, plot2, plot3, plot4, plot5, plot6, plot7, plot8, plot9, plot10, plot11, plot12, ncol=3)
 ```
 
 ##### Numeric Variables
 Distribtuion of numeric variables
-```{r fig.height=10, fig.width=10, fig.align="center", warning=FALSE}
+```{r fig.height=10, fig.width=10, fig.align="center", warning=FALSE, echo=FALSE}
 # numeric predictor variable distributions
 plot1 = ggplot(df_adult, aes(age)) + geom_histogram() +
   ggtitle("Age")
@@ -291,7 +300,7 @@ plot10 = ggplot(df_adult, aes(sleep_hr)) + geom_histogram() +
 grid.arrange(plot1, plot3, plot4, plot5, plot6, plot7, plot8, plot9, plot10, ncol=3)
 ```                    
           
-```{r fig.height=10, fig.width=9, fig.align="center", warning=FALSE}
+```{r fig.height=10, fig.width=9, fig.align="center", warning=FALSE, echo=FALSE}
 # transformations on numeric predictor variables
 plot1 = ggplot(df_adult, aes(alcoholfrq)) + geom_histogram() +
   ggtitle("Frequency of Alcohol Consumption")
@@ -326,7 +335,7 @@ grid.arrange(plot1, plot2, plot3, plot4, plot5, plot6, plot7, plot8, plot9, plot
 ```  
 
 Response vs. numeric distribution
-```{r fig.height=10, fig.width=10, fig.align="center", warning=FALSE}
+```{r fig.height=10, fig.width=10, fig.align="center", warning=FALSE, echo=FALSE}
 plot1 = ggplot(df_adult, aes(x=age, y=log(bmi))) + geom_point() + 
   ggtitle("Age")
 plot3 = ggplot(df_adult, aes(x=famsize, y=log(bmi))) + geom_point() + 
@@ -349,7 +358,7 @@ grid.arrange(plot1, plot3, plot4, plot5, plot6, plot7, plot8, plot9, plot10, nco
 ```          
 
 
-```{r fig.height=10, fig.width=10, fig.align="center", warning=FALSE}
+```{r fig.height=10, fig.width=10, fig.align="center", warning=FALSE, echo=FALSE}
 plot1 = ggplot(df_adult, aes(x=age, y=log(bmi), colour=gender)) + geom_point() + 
   ggtitle("Age")
 plot3 = ggplot(df_adult, aes(x=famsize, y=log(bmi), colour=gender)) + geom_point() + 
@@ -372,7 +381,7 @@ grid.arrange(plot1, plot3, plot4, plot5, plot6, plot7, plot8, plot9, plot10, nco
 ```          
 
 
-```{r data-transformation, warning=FALSE}
+```{r data-transformation, warning=FALSE, echo=FALSE}
 # response
 df_adult$log.bmi = log(df_adult$bmi)
 
@@ -388,7 +397,7 @@ df_adult$log.fastfood = log(df_adult$meals_fastfood + 1)
 
 
 parallel corrd plot to figure out if interaction may be helpful
-```{r fig.height=5, fig.width=10, fig.align="center", warning=FALSE}
+```{r fig.height=5, fig.width=10, fig.align="center", warning=FALSE, echo=FALSE}
 # library(MASS)
 # library(RColorBrewer)
 # k <- adjustcolor(brewer.pal(5, "Set2")[df_adult$sleep_trouble], alpha=.6)
