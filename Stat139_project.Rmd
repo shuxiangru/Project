@@ -438,3 +438,19 @@ check_assumptions(model1a)
 
 ```
 
+```{r}
+#lasso
+require(glmnet)
+
+x.lasso = model.matrix(formula(model_interact), data=df_adult)
+model_lasso = cv.glmnet(x.lasso, df_adult$log2.bmi, nfolds = 5)
+#plot
+plot(model_lasso)
+lambda.min = model_lasso$lambda.min
+mse.min = min(model_lasso$cvm)
+
+coef.lasso = coef(model_lasso, s = "lambda.min")
+nonzero_coef = cbind(rownames(coef.lasso)[which(coef.lasso != 0)], coef.lasso[which(coef.lasso != 0)])
+
+```
+
