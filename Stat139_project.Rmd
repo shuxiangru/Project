@@ -141,21 +141,7 @@ for (feature in drop_obs){
 
 
 # feature engineering
-df_adult$marriage[which(df_adult$marriage==1)]="married/living_with_partner"
-df_adult$marriage[which(df_adult$marriage==6)]="married/living_with_partner"
-df_adult$marriage[which(df_adult$marriage==3)]="divorced/separated"
-df_adult$marriage[which(df_adult$marriage==4)]="divorced/separated"
-df_adult$marriage[which(df_adult$marriage==2)]="widowed"
-df_adult$marriage[which(df_adult$marriage==5)]="never_married"
-              
 
-df_adult$tv_hrs[which(df_adult$tv_hrs == 0)]= "1hr_or_less"
-df_adult$tv_hrs[which(df_adult$tv_hrs==1)] ="1hr_or_less"
-df_adult$tv_hrs[which(df_adult$tv_hrs == 8)] = "0hr"
-df_adult$tv_hrs[which(df_adult$tv_hrs == 2)]  = "2-4hrs"
-df_adult$tv_hrs[which(df_adult$tv_hrs == 3)]= "2-4hrs"
-df_adult$tv_hrs[which(df_adult$tv_hrs == 4)]= "2-4hrs"
-df_adult$tv_hrs[which(df_adult$tv_hrs == 5)] = "5hrs_or_more"
 
 new_bmi = df_adult$bmi
 df_adult["bmi_class"] = new_bmi
@@ -188,6 +174,13 @@ levels(df_adult$edu) = c("High School Below", "High School", "High School Above"
 #famincome
 levels(df_adult$famincome) = c(rep(1, 5), rep(2, 3), rep(3, 2), 4, 5 )
 levels(df_adult$famincome) = c("below 25k", "25k~55k", "55k~75k", "75k~100k", "above 100k")
+
+#marriage
+levels(df_adult$marriage) = c("married/living_with_partner", "widowed", "divorced/separated", "divorced/separated", "never_married", "married/living_with_partner")
+
+
+#tv_hrs
+levels(df_adult$famincome) = c("1hr_or_less","1hr_or_less", "2-4hrs", "2-4hrs" , "2-4hrs", "5hrs_or_more", "0hr")
 
 
 apply(df_adult, 2, function(x) sum(is.na(x))) # check how many missing data
