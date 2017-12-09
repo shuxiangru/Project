@@ -85,7 +85,7 @@ categorical_features = c("gender", "race", "edu", "marriage",
                          "famincome", "alcohol12yr", "milk", "depressed", 
                          "sleep_trouble", "smoke", "tv_hrs")
 
-numeric_features = c("age", "famsize", "alcoholfrq", "grocery", "eatout",
+numeric_features = c("height","age", "famsize", "alcoholfrq", "grocery", "eatout",
                      "delivery", "meals_nothome", "meals_fastfood", "sleep_hr")
 
 # convert categorical variables into factors
