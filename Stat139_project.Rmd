@@ -481,3 +481,57 @@ coef.mix = coef(model_mix, s = "lambda.min")
 nonzero_coef_mix = cbind(rownames(coef.mix)[which(coef.mix != 0)], coef.mix[which(coef.mix != 0)])
 ```
 
+
+```{r, warning=FALSE, echo=FALSE}
+
+# load the library
+library(caret)
+library(lattice)
+# define training control
+train_control <- trainControl(method="cv", number=5)
+
+
+
+
+# model sleep
+msleep_cv = train(log2.bmi ~ gender + age + race + edu + marriage + famsize + famincome + alcohol12yr + alcoholfrq + log.grocery + log.eatout + log.delivery + milk + meals_nothome + meals_fastfood + depressed + sleep_trouble + activity + tv_hrs + sleep_hr + smoke + sleep_hr2
+, data=df_adult, method="lm", preProcess="scale", trControl=train_control)
+
+print("model_sleep cv results:")
+print(msleep_cv$results)
+
+
+
+# model 1a
+m1a_cv = train(log2.bmi ~ gender + race + edu + marriage + famsize + famincome + alcoholfrq + log.eatout + milk + depressed + activity + tv_hrs + sleep_hr + smoke + sleep_hr2
+, data=df_adult, method="lm", preProcess="scale", trControl=train_control)
+
+print("model_1a cv results:")
+print(m1a_cv$results)
+
+
+# model interact
+mintr_cv = train(log2.bmi ~ (gender + age + race + edu + marriage + famsize + famincome + alcohol12yr + alcoholfrq + log.grocery + log.eatout + log.delivery + milk + meals_nothome + meals_fastfood + depressed + sleep_trouble + activity + tv_hrs + sleep_hr + smoke + sleep_hr2)^2
+, data=df_adult, method="lm", preProcess="scale", trControl=train_control)
+
+print("model_interact cv results:")
+print(mintr_cv$results)
+
+# model 1b
+m1b_cv = train(log2.bmi ~ race + tv_hrs + smoke + depressed + famincome + milk + gender + marriage + log.eatout + sleep_hr + sleep_hr2 + alcoholfrq + activity + meals_fastfood + famincome:gender + smoke:gender + race:gender + smoke:marriage + depressed:famincome + race:activity + depressed:milk + log.eatout:sleep_hr + race:meals_fastfood + gender:meals_fastfood + tv_hrs:log.eatout + smoke:sleep_hr2 + sleep_hr:alcoholfrq
+, data=df_adult, method="lm", preProcess="scale", trControl=train_control)
+
+print("model_1b cv results:")
+print(m1b_cv$results)
+
+
+# model 2
+m2_cv = train(log2.bmi ~ gender + age + race + edu + marriage + famsize + famincome + alcohol12yr + alcoholfrq + log.grocery + log.eatout + log.delivery + milk + meals_nothome + meals_fastfood + depressed + sleep_trouble + activity + tv_hrs + sleep_hr + smoke + famsize * famincome + famsize * log.grocery + famsize * log.eatout + famsize * log.delivery
+, data=df_adult, method="lm", preProcess="scale", trControl=train_control)
+
+print("model_2 cv results:")
+print(m2_cv$results)
+
+```
+
+
