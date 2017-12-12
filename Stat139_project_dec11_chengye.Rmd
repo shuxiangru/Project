@@ -60,6 +60,8 @@ output:
 ## Appendix
 ### Appendix I: Data preprocessing
 ```{r data_preprocessing, warnings=FALSE, echo=FALSE}
+
+set.seed(1234)
 library(dplyr)
 demographics = read.csv("data/health/demographic.csv")
 ques = read.csv("data/health/questionnaire.csv")
@@ -566,15 +568,56 @@ summary(model_elastic)
 plotres(model_elastic, which=3:4, caption = "Full interaction Elastic model \n assumption check")
 
 ```
-
 ```{r}
+# best model (model1c) bootstraping 
+
+# Bootstrap 95% CI for regression coefficients 
+library(boot)
+# function to obtain regression weights 
+bs <- function(formula, data, indices) {
+  d <- data[indices,] # allows boot to select sample 
+  fit <- lm(formula, data=d)
+  return(coef(fit)) 
+} 
+# bootstrapping with 1000 replications 
+nsim = 1000
+results <- boot(data=df_adult, statistic=bs, R=nsim, formula=formula(model1c))
+names_ = names(coef(lm(formula(model1c), data=df_adult)))
+
+ci = data.frame(matrix(ncol = 3, nrow = length(names_)))
+
+print("the following coef is statistically significant from 0:")
+for (i in c(1:85, 88:90)){
+  ci[i, 1:2] = boot.ci(boot.out=results, conf = 0.95, type = "perc", index= i)$perc[,4:5]
+  ci[i, 3] = (0 < ci[i, 2]) & (0 > ci[i, 1]) 
+  if (ci[i, 3] == FALSE) {print(names_[i])}
+}
+
+```
+
+```{r, message=FALSE, warning=FALSE, echo=FALSE}
 library(nnet)
 
-form =  update.formula(formula(model1c), bmi_class~.)
 
-multinomial_model = multinom(form, data=df_adult)
+#multinomial classification
+## -- Base model
+multinomial_base_form = update.formula(formula(base_form), bmi_class~.)
+multinomial_base_cv = train(multinomial_base_form, data=df_adult, method="multinom", preProcess="scale", trControl=train_control, trace=0)
 
-mean(predict(multinomial_model, newdata = df_adult, "class") == df_adult$bmi_class)
+print(paste("Multinomial classification base model cv accuracy:", max(multinomial_base_cv$results$Accuracy)))
+
+
+
+
+## -- forward selected full interaction model
+multinomial_sel_intr_form =  update.formula(formula(model1c), bmi_class~.)
+
+multinomial_sel_intr_cv = train(multinomial_sel_intr_form, data=df_adult, method="multinom", preProcess="scale", trControl=train_control, trace=0)
+
+print(paste("Multinomial classification forward selected full interaction model cv results:", max(multinomial_sel_intr_cv$results$Accuracy)))
+
+
+```
 
 ```
 
