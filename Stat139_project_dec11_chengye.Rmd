@@ -470,6 +470,13 @@ print(paste("RMSE:", model_interact_cv$results$RMSE, "Rsquared:", model_interact
 
 ```
 
+```{r fig.height=3, fig.width=3, fig.align="center"}
+# Based on model1, add interaction terms between famsize and (famincome, log.grocery, log.eatout and log.delivery)
+model1b = lm(update.formula(base_form, .~.+famsize*(famincome+log.grocery+log.eatout+log.delivery)), data = df_adult)
+summary(model1b)
+plotres(model1b, which=3:4, caption = "Base model plus family interaction \nterm assumption check")
+```
+
 
 ```{r fig.height=3, fig.width=3, fig.align="center", warning=FALSE, echo=FALSE}
 #forward selection from intercept only model to full model
@@ -485,12 +492,6 @@ forward_sel_intr_model_cv = train(formula(model1c), data=df_adult, method="lm", 
 print("Forward selected full interaction model cv results:")
 print(paste("RMSE:", forward_sel_intr_model_cv$results$RMSE, "Rsquared:", forward_sel_intr_model_cv$results$Rsquared))
 
-```
-```{r fig.height=3, fig.width=3, fig.align="center"}
-# Based on model1, add interaction terms between famsize and (famincome, log.grocery, log.eatout and log.delivery)
-model1b = lm(update.formula(base_form, .~.+famsize*(famincome+log.grocery+log.eatout+log.delivery)), data = df_adult)
-summary(model1b)
-plotres(model1b, which=3:4, caption = "Base model plus family interaction \nterm assumption check")
 ```
 
 
@@ -575,5 +576,16 @@ multinomial_model = multinom(form, data=df_adult)
 
 mean(predict(multinomial_model, newdata = df_adult, "class") == df_adult$bmi_class)
 
+```
+
+```{r}
+write.csv(data.frame(summary(model1)$coefficients), file="table1.csv")
+write.csv(data.frame(summary(model1a)$coefficients), file="table1a.csv")
+write.csv(data.frame(summary(model1b)$coefficients), file="table1b.csv")
+write.csv(data.frame(summary(model1c)$coefficients), file="table1c.csv")
+
+write.csv(data.frame(nonzero_coef_lasso), file="table_lasso.csv")
+write.csv(data.frame(nonzero_coef_ridge), file="table_ridge.csv")
+write.csv(data.frame(nonzero_coef_elastic), file="table_elastic.csv")
 ```
 
