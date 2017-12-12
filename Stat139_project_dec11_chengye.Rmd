@@ -473,14 +473,14 @@ print(paste("RMSE:", model_interact_cv$results$RMSE, "Rsquared:", model_interact
 
 ```{r fig.height=3, fig.width=3, fig.align="center", warning=FALSE, echo=FALSE}
 #forward selection from intercept only model to full model
-model1b = step(lm(log2.bmi ~ 1, data = df_adult), scope = list(upper = model_interact), direction = "forward", trace = 0)
-summary(model1b)
-extractAIC(model1b)
-plotres(model1b, which=3:4, caption = "Forward selected full interaction \n model assumption check")
+model1c = step(lm(log2.bmi ~ 1, data = df_adult), scope = list(upper = model_interact), direction = "forward", trace = 0)
+summary(model1c)
+extractAIC(model1c)
+plotres(model1c, which=3:4, caption = "Forward selected full interaction \n model assumption check")
 
 
 #Forward selected full interaction model cv
-forward_sel_intr_model_cv = train(formula(model1b), data=df_adult, method="lm", preProcess="scale", trControl=train_control)
+forward_sel_intr_model_cv = train(formula(model1c), data=df_adult, method="lm", preProcess="scale", trControl=train_control)
 
 print("Forward selected full interaction model cv results:")
 print(paste("RMSE:", forward_sel_intr_model_cv$results$RMSE, "Rsquared:", forward_sel_intr_model_cv$results$Rsquared))
@@ -488,14 +488,14 @@ print(paste("RMSE:", forward_sel_intr_model_cv$results$RMSE, "Rsquared:", forwar
 ```
 ```{r fig.height=3, fig.width=3, fig.align="center"}
 # Based on model1, add interaction terms between famsize and (famincome, log.grocery, log.eatout and log.delivery)
-model2 = lm(update.formula(base_form, .~.+famsize*(famincome+log.grocery+log.eatout+log.delivery)), data = df_adult)
-summary(model2)
-plotres(model2, which=3:4, caption = "Base model plus family interaction \nterm assumption check")
+model1b = lm(update.formula(base_form, .~.+famsize*(famincome+log.grocery+log.eatout+log.delivery)), data = df_adult)
+summary(model1b)
+plotres(model1b, which=3:4, caption = "Base model plus family interaction \nterm assumption check")
 ```
 
 
 ```{r}
-anova(model1, model2)
+anova(model1, model1b)
 ```
 
 
@@ -569,7 +569,7 @@ plotres(model_elastic, which=3:4, caption = "Full interaction Elastic model \n a
 ```{r}
 library(nnet)
 
-form =  update.formula(formula(model1b), bmi_class~.)
+form =  update.formula(formula(model1c), bmi_class~.)
 
 multinomial_model = multinom(form, data=df_adult)
 
