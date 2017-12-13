@@ -136,8 +136,8 @@ df_adult = df_adult[!is.na(df_adult$bmi),]
 
 # feature engineering
 df_adult$bmi_class = df_adult$bmi
-df_adult$bmi_class[which(df_adult$bmi_class >= 40)] = "class 3 obesity"
-df_adult$bmi_class[which(df_adult$bmi_class >= 30 & df_adult$bmi_class < 40)] = "obese"
+# df_adult$bmi_class[which(df_adult$bmi_class >= 40)] = "class 3 obesity"
+df_adult$bmi_class[which(df_adult$bmi_class >= 30 )] = "obese"
 df_adult$bmi_class[which(df_adult$bmi_class >= 25 & df_adult$bmi_class < 30)] = "overweight"
 df_adult$bmi_class[which(df_adult$bmi_class >= 18.5 & df_adult$bmi_class < 25)] = "healthy"
 df_adult$bmi_class[which(df_adult$bmi_class < 18.5)] = "underweight"
@@ -407,6 +407,7 @@ train_control <- trainControl(method="cv", number=5)
 
 #baseline model
 model1 = lm(log2.bmi~gender+age+race+edu+marriage+famsize+famincome+alcohol12yr+alcoholfrq+log.grocery+log.eatout+log.delivery+milk+meals_nothome+meals_fastfood+depressed+sleep_trouble+activity+tv_hrs+sleep_hr+smoke, data = df_adult)
+
 base_form = formula(model1)
 
 summary(model1)
@@ -419,87 +420,97 @@ print("Base model cv results:")
 print(paste("RMSE:", model1_cv$results$RMSE, "Rsquared:", model1_cv$results$Rsquared))
 
 ```
+```{r}
+#model1a: baseline model step
+model1a = step(model1, trace = 0, direction = "backward")
+
+summary(model1a)
+plotres(model1a, which=3:4, caption = "model1a assumption check")
+
+base_1a_form = formula(model1a)
+#baseline model cv
+model1a_cv = train(base_1a_form, data=df_adult, method="lm", preProcess="scale", trControl=train_control)
+
+print("model1a cv results:")
+print(paste("RMSE:", model1a_cv$results$RMSE, "Rsquared:", model1a_cv$results$Rsquared))
+```
+```{r}
+#compare model1 with model1a
+anova(model1a, model1)
+```
 
 ```{r fig.height=3, fig.width=3, fig.align="center"}
-# add sleep^2 to basemodel
+#model1b: add sleep^2 to model1a
 
-base_sleep_form = update.formula(base_form, . ~. + I(sleep_hr^2))
+base_sleep_form = update.formula(base_1a_form, . ~. + I(sleep_hr^2))
 
-model_sleep = lm(base_sleep_form, data = df_adult)
-summary(model_sleep)
-plotres(model_sleep, which=3:4, caption = "Base model plus sleephour^2 assumption check")
+model1b = lm(base_sleep_form, data = df_adult)
+summary(model1b)
+plotres(model1b, which=3:4, caption = "model1a plus sleephour^2 assumption check")
 
-#sleep model cv
-model_sleep_cv = train(base_sleep_form, data=df_adult, method="lm", preProcess="scale", trControl=train_control)
+model1b_form = formula(model1b)
 
-print("Base model plus sleephour^2 cv results:")
-print(paste("RMSE:", model_sleep_cv$results$RMSE, "Rsquared:", model_sleep_cv$results$Rsquared))
+#model1b cv
+model1b_cv = train(base_sleep_form, data=df_adult, method="lm", preProcess="scale", trControl=train_control)
+
+
+print("model1a plus sleephour^2 cv results:")
+print(paste("RMSE:", model1b_cv$results$RMSE, "Rsquared:", model1b_cv$results$Rsquared))
 
 
 
 ```
+```{r}
+#compare model1b to model1a
+anova(model1a, model1b)
+```
 
 ```{r fig.height=3, fig.width=3, fig.align="center"}
-#backward selection from model_sleep
-model1a = step(model_sleep, trace = 0, direction = "backward")
+#model1c: add famsize interactions
+model1c = lm(update.formula(model1b_form, .~.+famsize*(famincome+log.grocery+log.eatout+log.delivery)), data = df_adult)
 
-summary(model1a)
-extractAIC(model1a)
-plotres(model1a, which=3:4, caption = "Backward selected sleep model\n assumption check")
+summary(model1c)
+extractAIC(model1c)
+plotres(model1c, which=3:4, caption = "model1c assumption check")
 
 
 #model1a cv
-model1a_cv = train(formula(model1a), data=df_adult, method="lm", preProcess="scale", trControl=train_control)
+model1c_cv = train(formula(model1c), data=df_adult, method="lm", preProcess="scale", trControl=train_control)
 
-print("Model1a cv results:")
-print(paste("RMSE:", model1a_cv$results$RMSE, "Rsquared:", model1a_cv$results$Rsquared))
+print("Model1c cv results:")
+print(paste("RMSE:", model1c_cv$results$RMSE, "Rsquared:", model1c_cv$results$Rsquared))
 
 
 ```
+```{r}
+#compare model1c to model1b
+anova(model1b, model1c)
+```
 
 ```{r fig.height=3, fig.width=3, fig.align="center", warning=FALSE, echo=FALSE}
-#full model with all the 2 way interactions(including sleep_hr2)
-full_intr_form = update(base_sleep_form, .~ (.)^2)
+#model1d: the model with all the 2 way interactions(including sleep_hr2) after step()
+full_intr_form = update(model1b_form, .~ (.)^2)
 model_interact = lm(full_intr_form, data = df_adult)
-summary(model_interact)
-plotres(model_interact, which=3:4, caption = "Full interaction model assumption check")
 
-#full interaction model cv
-model_interact_cv = train(full_intr_form, data=df_adult, method="lm", preProcess="scale", trControl=train_control)
+model1d = step(lm(log2.bmi ~ 1, data = df_adult), scope = list(upper = model_interact), direction = "forward", trace = 0)
+summary(model1d)
+plotres(model1d, which=3:4, caption = "model1d assumption check")
 
-print("Full interaction model cv results:")
-print(paste("RMSE:", model_interact_cv$results$RMSE, "Rsquared:", model_interact_cv$results$Rsquared))
+#model1d cv
+model1d_cv = train(formula(model1d), data=df_adult, method="lm", preProcess="scale", trControl=train_control)
 
-```
-
-```{r fig.height=3, fig.width=3, fig.align="center"}
-# Based on model1, add interaction terms between famsize and (famincome, log.grocery, log.eatout and log.delivery)
-model1b = lm(update.formula(base_form, .~.+famsize*(famincome+log.grocery+log.eatout+log.delivery)), data = df_adult)
-summary(model1b)
-plotres(model1b, which=3:4, caption = "Base model plus family interaction \nterm assumption check")
-```
-
-
-```{r fig.height=3, fig.width=3, fig.align="center", warning=FALSE, echo=FALSE}
-#forward selection from intercept only model to full model
-model1c = step(lm(log2.bmi ~ 1, data = df_adult), scope = list(upper = model_interact), direction = "forward", trace = 0)
-summary(model1c)
-extractAIC(model1c)
-plotres(model1c, which=3:4, caption = "Forward selected full interaction \n model assumption check")
-
-
-#Forward selected full interaction model cv
-forward_sel_intr_model_cv = train(formula(model1c), data=df_adult, method="lm", preProcess="scale", trControl=train_control)
-
-print("Forward selected full interaction model cv results:")
-print(paste("RMSE:", forward_sel_intr_model_cv$results$RMSE, "Rsquared:", forward_sel_intr_model_cv$results$Rsquared))
+print("model1d cv results:")
+print(paste("RMSE:", model1d_cv$results$RMSE, "Rsquared:", model1d_cv$results$Rsquared))
 
 ```
 
 
 ```{r}
-anova(model1, model1b)
+#compare model1d to model1b
+anova(model1b, model1d)
 ```
+
+
 
 
 ```{r, fig.height=3, fig.width=3, fig.align="center"}
@@ -522,6 +533,9 @@ plot(cv_lasso, main="Lasso: MSE vs. lambda")
 summary(model_lasso)
 plotres(model_lasso, which=3:4, caption = "Full interaction Lasso model assumption check")
 ```
+```{r}
+lasso.mse.min
+```
 
 
 
@@ -543,6 +557,9 @@ model_ridge = glmnet(x.ridge, df_adult$log2.bmi, lambda = ridge.lambda.min, alph
 plot(cv_ridge, main="Ridge: MSE vs. lambda")
 summary(model_ridge)
 plotres(model_ridge, which=3:4, caption = "Full interaction Lasso model \n assumption check")
+```
+```{r}
+ridge.mse.min
 ```
 
 
@@ -569,7 +586,7 @@ plotres(model_elastic, which=3:4, caption = "Full interaction Elastic model \n a
 
 ```
 ```{r}
-# best model (model1c) bootstraping 
+# best model (model1d) bootstraping 
 
 # Bootstrap 95% CI for regression coefficients 
 library(boot)
@@ -580,9 +597,9 @@ bs <- function(formula, data, indices) {
   return(coef(fit)) 
 } 
 # bootstrapping with 1000 replications 
-nsim = 1000
-results <- boot(data=df_adult, statistic=bs, R=nsim, formula=formula(model1c))
-names_ = names(coef(lm(formula(model1c), data=df_adult)))
+nsim = 500
+results <- boot(data=df_adult, statistic=bs, R=nsim, formula=formula(model1d))
+names_ = names(coef(lm(formula(model1d), data=df_adult)))
 
 ci = data.frame(matrix(ncol = 3, nrow = length(names_)))
 
@@ -610,16 +627,15 @@ print(paste("Multinomial classification base model cv accuracy:", max(multinomia
 
 
 ## -- forward selected full interaction model
-multinomial_sel_intr_form =  update.formula(formula(model1c), bmi_class~.)
+multinomial_1d =  update.formula(formula(model1d), bmi_class~.)
 
-multinomial_sel_intr_cv = train(multinomial_sel_intr_form, data=df_adult, method="multinom", preProcess="scale", trControl=train_control, trace=0)
+multinomial_1d_cv = train(multinomial_1d, data=df_adult, method="multinom", preProcess="scale", trControl=train_control, trace=0)
 
-print(paste("Multinomial classification forward selected full interaction model cv results:", max(multinomial_sel_intr_cv$results$Accuracy)))
+print(paste("Multinomial classification model1d cv results:", max(multinomial_1d_cv$results$Accuracy)))
 
-
-```
 
 ```
+
 
 ```{r}
 write.csv(data.frame(summary(model1)$coefficients), file="table1.csv")
