@@ -643,8 +643,8 @@ for (i in c(1:85, 88:90)){
 
 ```{r, message=FALSE, warning=FALSE, echo=FALSE}
 library(nnet)
-
 set.seed(1234)
+
 #multinomial classification
 ## -- Base model
 multinomial_base_form = update.formula(formula(base_form), bmi_class~.)
@@ -652,8 +652,11 @@ multinomial_base_cv = train(multinomial_base_form, data=df_adult, method="multin
 
 print(paste("Multinomial classification base model cv accuracy:", max(multinomial_base_cv$results$Accuracy)))
 
+## -- Base sleep model
+multinomial_base_sleep_form = update.formula(formula(base_sleep_form), bmi_class~.)
+multinomial_base_sleep_cv = train(multinomial_base_sleep_form, data=df_adult, method="multinom", preProcess="scale", trControl=train_control, trace=0)
 
-
+print(paste("Multinomial classification base sleep model cv accuracy:", max(multinomial_base_sleep_cv$results$Accuracy)))
 
 ## -- forward selected full interaction model
 multinomial_1d =  update.formula(formula(model1d), bmi_class~.)
@@ -661,6 +664,22 @@ multinomial_1d =  update.formula(formula(model1d), bmi_class~.)
 multinomial_1d_cv = train(multinomial_1d, data=df_adult, method="multinom", preProcess="scale", trControl=train_control, trace=0)
 
 print(paste("Multinomial classification model1d cv results:", max(multinomial_1d_cv$results$Accuracy)))
+
+
+multinomial_base_form = update.formula(formula(base_form), bmi_class~.)
+multinomial_base_cv = train(multinomial_base_form, data=df_adult, method="multinom", preProcess="scale", trControl=train_control, trace=0)
+
+print(paste("Ordinal classification base model cv accuracy:", max(multinomial_base_cv$results$Accuracy)))
+
+library(ordinalNet)
+
+#ordinal logistic regression
+## -- Base model
+x = model.matrix(update.formula(multinomial_base_form, .~.+0), data=df_adult)
+
+ordinal_base_cv = ordinalNetCV(x, as.factor(df_adult$bmi_class), lambdaVals=c(0), nFolds=5)
+
+print(paste("Ordinal classification base model cv accuracy:", 1-mean(summary(ordinal_base_cv)$misclass)))
 
 
 ```
