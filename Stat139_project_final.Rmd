@@ -1,0 +1,648 @@
+---
+title: "R Code for Project Investigating Behavioral Factors Associated with Adult Obesity"
+subtitle: "A STAT 139 Final Project"
+author: "Yuyue Wang, Xiangru Shu, Chengye Liu, Chia Chi (Michelle) Ho"
+date: "Due December 13, 2017"
+
+fontsize: 11pt
+geometry: margin=1in
+header-includes:
+  - \usepackage{graphicx}
+  - \usepackage{enumerate}
+  - \usepackage{verbatim}
+  - \usepackage{amsmath}
+  - \usepackage{subfigure}
+  - \usepackage{parskip}
+  - \usepackage[notextcomp]{kpfonts}
+  - \usepackage{geometry}
+  - \usepackage[T1]{fontenc}
+  - \usepackage{inconsolata}
+  - \usepackage[dvipsnames]{xcolor}
+  - \DeclareMathOperator*{\argmin}{argmin}
+  
+output:
+  pdf_document:
+    fig_width: 5
+    fig_height: 3.5
+  html_document:
+    smart: false
+---
+
+
+# Appendix
+## Appendix I: Data preprocessing
+```{r data_preprocessing, warnings=FALSE, echo=FALSE}
+
+set.seed(1234)
+library(dplyr)
+demographics = read.csv("data/health/demographic.csv")
+ques = read.csv("data/health/questionnaire.csv")
+exam = read.csv("data/health/examination.csv")
+
+# join tables by participant ID
+df = inner_join(demographics, ques, by="SEQN")
+df = inner_join(df, exam, by="SEQN")
+
+# subset df to consider only the variables we're interested in
+response = "BMXBMI"
+predictors = c("RIAGENDR", "RIDAGEYR", "RIDRETH3", "DMDEDUC2", "DMDMARTL", "DMDFMSIZ", "INDFMIN2", 
+               "ALQ101", "ALQ120Q", 
+               "CBD070", "CBD120", "CBD130", 
+               "DBD895", "DBD900", "DBQ197", 
+               "DPQ020", "DPQ030",
+               "PAQ710", "PAQ665",
+               "SLD010H", "SMQ040")
+
+columns = c(predictors, response)
+
+df = df[names(df) %in% columns]
+
+# rename columns to more intuitive names
+df = rename(df, gender = RIAGENDR, age = RIDAGEYR, race = RIDRETH3, edu = DMDEDUC2,
+            marriage = DMDMARTL, famsize = DMDFMSIZ, famincome = INDFMIN2,
+            alcohol12yr = ALQ101, alcoholfrq = ALQ120Q, grocery = CBD070, eatout = CBD120,
+            delivery = CBD130, milk = DBQ197, meals_nothome = DBD895, meals_fastfood = DBD900,
+            depressed = DPQ020, sleep_trouble = DPQ030, tv_hrs = PAQ710,
+            sleep_hr = SLD010H, smoke = SMQ040, bmi = BMXBMI, activity=PAQ665)
+
+# subset the df to consider only adults aged 20 or above
+df_adult = df[df$age > 21,]
+
+# subset the data to exclude refused/don't know/missing data
+# demographics variables
+df_adult = df_adult[which(df_adult$edu!=7 & df_adult$edu!=9),]
+df_adult = df_adult[which(df_adult$activity!=7 & df_adult$activity!=9),]
+df_adult = df_adult[which(df_adult$marriage!=77 & df_adult$marriage!=99),]
+df_adult = df_adult[which(df_adult$famincome!=77 & df_adult$famincome!=99),]
+
+# alcohol use variables
+df_adult = df_adult[which(df_adult$alcohol12yr!=7 & df_adult$alcohol12yr!=9),]
+df_adult = df_adult[which(df_adult$alcoholfrq!=777 & df_adult$alcoholfrq!=999),]
+
+# consumer behavior variables
+df_adult = df_adult[which(df_adult$grocery!=777777 & df_adult$grocery!=999999),]
+df_adult = df_adult[which(df_adult$eatout!=777777 & df_adult$eatout!=999999),]
+df_adult = df_adult[which(df_adult$delivery!=777777 & df_adult$delivery!=999999),]
+
+# diet behavior variables
+df_adult = df_adult[which(df_adult$meals_nothome != 5555 & df_adult$meals_nothome != 7777 & df_adult$meals_nothome != 9999),]
+df_adult = df_adult[which(df_adult$meals_fastfood != 5555 & df_adult$meals_fastfood != 7777 & df_adult$meals_fastfood != 9999),]
+
+# physical activity variables
+df_adult = df_adult[which(df_adult$tv_hrs != 77 & df_adult$tv_hrs != 99),]
+
+# mental health variables
+df_adult = df_adult[which(df_adult$depressed!=7 & df_adult$depressed!=9),]
+df_adult = df_adult[which(df_adult$sleep_trouble!=7 & df_adult$sleep_trouble!=9),]
+
+# sleeping behavior variables
+df_adult = df_adult[which(df_adult$sleep_hr != 99),]
+
+# smoking behavior variables
+df_adult$smoke[which(is.na(df_adult$smoke))] = "missing"
+df_adult$smoke[which(is.na(df_adult$activity))] = "missing"
+
+# drop missing bmi observatioins
+df_adult = df_adult[!is.na(df_adult$bmi),]
+
+
+# feature engineering
+df_adult$bmi_class = df_adult$bmi
+# df_adult$bmi_class[which(df_adult$bmi_class >= 40)] = "class 3 obesity"
+df_adult$bmi_class[which(df_adult$bmi_class >= 30 )] = "obese"
+df_adult$bmi_class[which(df_adult$bmi_class >= 25 & df_adult$bmi_class < 30)] = "overweight"
+df_adult$bmi_class[which(df_adult$bmi_class >= 18.5 & df_adult$bmi_class < 25)] = "healthy"
+df_adult$bmi_class[which(df_adult$bmi_class < 18.5)] = "underweight"
+
+# save variable names into lists of categorical or numeric faetures
+categorical_features = c("gender", "race", "edu", "marriage",
+                         "famincome", "alcohol12yr", "milk", "depressed", 
+                         "sleep_trouble", "smoke", "tv_hrs","activity")
+
+numeric_features = c("height","age", "famsize", "alcoholfrq", "grocery", "eatout",
+                     "delivery", "meals_nothome", "meals_fastfood", "sleep_hr")
+
+#drop famincome 12,13
+df_adult = df_adult[!(df_adult$famincome==12 | df_adult$famincome==13),]
+
+# convert categorical variables into factors
+df_adult[categorical_features] = lapply(df_adult[categorical_features], factor)
+
+#activity
+levels(df_adult$activity) = c(1, 2)
+levels(df_adult$activity) = c("Yes", "No")
+
+#gender
+levels(df_adult$gender) = c("male", "female")
+
+#race
+levels(df_adult$race) = c("mexican", "other hispanic", "white", "black", "asian", "other")
+
+#edu
+levels(df_adult$edu) = c(1, 1, 2, 3, 3)
+levels(df_adult$edu) = c("below hs", "hs", "above hs")
+
+#alcohol consumption
+levels(df_adult$alcohol12yr) = c("yes", "no")
+
+#milk
+levels(df_adult$milk) = c("never", "rare", "sometimes", "often", "varied")
+
+# depressed
+levels(df_adult$depressed) = c("no", "sometimes", "often", "alwyas")
+
+# sleep_trouble
+levels(df_adult$sleep_trouble) = c("no", "sometimes", "often", "always")
+
+#smoke
+levels(df_adult$smoke) = c("everyday", "sometimes", "no", "missing")
+  
+#famincome
+levels(df_adult$famincome) = c(rep(1, 5), rep(2, 3), rep(3, 2), 4, 5 )
+levels(df_adult$famincome) = c("below 25k", "25k~55k", "55k~75k", "75k~100k", "above 100k")
+
+#marriage
+levels(df_adult$marriage) = c("married", "widowed", "divorced", "divorced", "never_married", "married")
+
+#tv_hrs
+levels(df_adult$tv_hrs) = c("1hr","1hr", "2~4hrs", "2~4hrs" , "2~4hrs", "5hrs", "0hr")
+
+
+apply(df_adult, 2, function(x) sum(is.na(x))) # check how many missing data
+sapply(df_adult, class) # check data classes
+```
+
+## Appendix II: Exploratory Data Analysis
+### Response Variable (bmi)
+```{r fig.height=3, fig.width=10, fig.align="center", warning=FALSE, echo=FALSE}
+library(ggplot2)
+require(gridExtra)
+transform1 = log(df_adult$bmi)
+transform2 = log(log(df_adult$bmi))
+
+# response variable distribution
+plot1 = ggplot(df_adult, aes(bmi)) +
+  geom_histogram() +
+  ggtitle("BMI")
+plot2 = ggplot(df_adult, aes(transform1)) +
+  geom_histogram() +
+  ggtitle("log(bmi)")
+plot3 = ggplot(df_adult, aes(transform2)) +
+  geom_histogram() +
+  ggtitle("Log(log(bmi))")
+grid.arrange(plot1, plot2, plot3, ncol=3)
+```
+
+
+#### Predictor Variables
+
+##### Numeric Variables
+Distribtuion of numeric variables
+```{r fig.height=10, fig.width=10, fig.align="center", warning=FALSE, echo=FALSE}
+# numeric predictor variable distributions
+plot1 = ggplot(df_adult, aes(age)) + geom_histogram() +
+  ggtitle("Age")
+plot3 = ggplot(df_adult, aes(famsize)) + geom_histogram() +
+  ggtitle("Family Size")
+plot4 = ggplot(df_adult, aes(alcoholfrq)) + geom_histogram() +
+  ggtitle("Frequency of Alcohol Consumption")
+plot5 = ggplot(df_adult, aes(grocery)) + geom_histogram() +
+  ggtitle("Money Spent on Grocery")
+plot6 = ggplot(df_adult, aes(eatout)) + geom_histogram() +
+  ggtitle("Money Spent Eating Out")
+plot7 = ggplot(df_adult, aes(delivery)) + geom_histogram() +
+  ggtitle("Money Spent on Delivered Food")
+plot8 = ggplot(df_adult, aes(meals_nothome)) + geom_histogram() +
+  ggtitle("Number of Meals Not Home Prepared")
+plot9 = ggplot(df_adult, aes(meals_fastfood)) + geom_histogram() +
+  ggtitle("Number of Fast Food Meals")
+plot10 = ggplot(df_adult, aes(sleep_hr)) + geom_histogram() +
+  ggtitle("Hours of Sleep")
+grid.arrange(plot1, plot3, plot4, plot5, plot6, plot7, plot8, plot9, plot10, ncol=3)
+```                    
+          
+          
+```{r fig.height=10, fig.width=9, fig.align="center", warning=FALSE, echo=FALSE}
+# transformations on numeric predictor variables
+plot1 = ggplot(df_adult, aes(alcoholfrq)) + geom_histogram() +
+  ggtitle("Frequency of Alcohol Consumption")
+plot2 = ggplot(df_adult, aes(log(alcoholfrq+1))) + geom_histogram() +
+  ggtitle("Log Frequency of Alcohol Consumption")
+
+plot3 = ggplot(df_adult, aes(grocery)) + geom_histogram() +
+  ggtitle("Money Spent on Grocery")
+plot4 = ggplot(df_adult, aes(log(grocery+1))) + geom_histogram() +
+  ggtitle("Log Money Spent on Grocery")
+
+plot5 = ggplot(df_adult, aes(eatout)) + geom_histogram() +
+  ggtitle("Money Spent on Eating Out")
+plot6 = ggplot(df_adult, aes(log(eatout+1))) + geom_histogram() +
+  ggtitle("Log Money Spent on Eating Out")
+
+plot7 = ggplot(df_adult, aes(delivery)) + geom_histogram() +
+  ggtitle("Money Spent on Delivered Food")
+plot8 = ggplot(df_adult, aes(log(delivery+1))) + geom_histogram() +
+  ggtitle("Log Money Spent on Delivered Food")
+
+plot9 = ggplot(df_adult, aes(meals_nothome)) + geom_histogram() +
+  ggtitle("Number of Meals Not Home Prepared")
+plot10 = ggplot(df_adult, aes(log(meals_nothome+1))) + geom_histogram() +
+  ggtitle("Log Number of Meals Not Home Prepared")
+
+plot11 = ggplot(df_adult, aes(meals_fastfood)) + geom_histogram() +
+  ggtitle("Number of Fast Food Meals")
+plot12 = ggplot(df_adult, aes(log(meals_fastfood+1))) + geom_histogram() +
+  ggtitle("Log Number of Fast Food Meals")
+grid.arrange(plot1, plot2, plot3, plot4, plot5, plot6, plot7, plot8, plot9, plot10, plot11, plot12, ncol=3)
+```  
+
+
+```{r data-transformation, warning=FALSE, echo=FALSE}
+# response
+df_adult$log2.bmi = log(log(df_adult$bmi))
+# numeric predictors
+df_adult$log.grocery = log(df_adult$grocery + 1)
+df_adult$log.eatout = log(df_adult$eatout + 1)
+df_adult$log.delivery = log(df_adult$delivery + 1)
+```
+
+
+##### Categorical Variables
+```{r fig.height=20, fig.width=15, fig.align="center", warning=FALSE, echo=FALSE}
+plot1 = ggplot(df_adult, aes(x=gender, y = log2.bmi)) + geom_boxplot() + 
+  theme(axis.text.x = element_text(angle=45),axis.text=element_text(size=16),title =element_text(size=18, face='bold'),axis.title=element_text(size=16,face="bold")) + 
+  labs(x="Gender", y="log2.bmi") + 
+  ggtitle("bmi by Gender") 
+plot2 = ggplot(df_adult, aes(x=race, y = log2.bmi)) + geom_boxplot() + 
+  theme(axis.text.x = element_text(angle=45),axis.text=element_text(size=16),title =element_text(size=18, face='bold'),axis.title=element_text(size=16,face="bold")) + 
+  labs(x="Race", y="log2.bmi") + 
+  ggtitle("bmi by Race")
+plot3 = ggplot(df_adult, aes(x=edu, y = log2.bmi)) + geom_boxplot() + 
+  theme(axis.text.x = element_text(angle=45),axis.text=element_text(size=16),title =element_text(size=18, face='bold'),axis.title=element_text(size=16,face="bold")) + 
+  labs(x="Education Level", y="log2.bmi") + 
+  ggtitle("bmi by Education Level") 
+plot4 = ggplot(df_adult, aes(x=marriage, y = log2.bmi)) + geom_boxplot() + 
+  theme(axis.text.x = element_text(angle=45),axis.text=element_text(size=16),title =element_text(size=18, face='bold'),axis.title=element_text(size=16,face="bold")) + 
+  labs(x="Marital Status", y="log2.bmi") + 
+  ggtitle("bmi by Marital Status") 
+plot5 = ggplot(df_adult, aes(x=famincome, y = log2.bmi)) + geom_boxplot() + 
+  theme(axis.text.x = element_text(angle=45),axis.text=element_text(size=16),title =element_text(size=18, face='bold'),axis.title=element_text(size=16,face="bold")) + 
+  labs(x="Family Income", y="log2.bmi") + 
+  ggtitle("bmi by Family Income")
+plot6 = ggplot(df_adult, aes(x=alcohol12yr, y = log2.bmi)) + geom_boxplot() + 
+  theme(axis.text.x = element_text(angle=45),axis.text=element_text(size=16),title =element_text(size=18, face='bold'),axis.title=element_text(size=16,face="bold")) + 
+  labs(x="Alcohol Use", y="log2.bmi") + 
+  ggtitle("bmi by Alcohol Use") 
+plot7 = ggplot(df_adult, aes(x=milk, y = log2.bmi)) + geom_boxplot() + 
+  theme(axis.text.x = element_text(angle=45),axis.text=element_text(size=16),title =element_text(size=18, face='bold'),axis.title=element_text(size=16,face="bold")) + 
+  labs(x="Milk Consumption", y="log2.bmi") + 
+  ggtitle("bmi by Milk Consumption") 
+plot8 = ggplot(df_adult, aes(x=depressed, y = log2.bmi)) + geom_boxplot() + 
+  theme(axis.text.x = element_text(angle=45),axis.text=element_text(size=16),title =element_text(size=18, face='bold'),axis.title=element_text(size=16,face="bold")) + 
+  labs(x="Depressed", y="log2.bmi") + 
+  ggtitle("bmi by Despressed") 
+plot9 = ggplot(df_adult, aes(x=sleep_trouble, y = log2.bmi)) + geom_boxplot() + 
+  theme(axis.text.x = element_text(angle=45),axis.text=element_text(size=16),title =element_text(size=18, face='bold'),axis.title=element_text(size=16,face="bold")) + 
+  labs(x="Alcohol Use", y="log2.bmi") + 
+  ggtitle("bmi by Sleep Trouble") 
+plot10 = ggplot(df_adult, aes(x=smoke, y = log2.bmi)) + geom_boxplot() + 
+  theme(axis.text.x = element_text(angle=45),axis.text=element_text(size=16),title =element_text(size=18, face='bold'),axis.title=element_text(size=16,face="bold")) + 
+  labs(x="Smoke", y="log2.bmi") + 
+  ggtitle("bmi by Smoke") 
+plot11 = ggplot(df_adult, aes(x=tv_hrs, y = log2.bmi)) + geom_boxplot() + 
+  theme(axis.text.x = element_text(angle=45),axis.text=element_text(size=16),title =element_text(size=18, face='bold'),axis.title=element_text(size=16,face="bold")) + 
+  labs(x="TV Consumption", y="log2.bmi") + 
+  ggtitle("bmi by TV Consumption")
+plot12 = ggplot(df_adult, aes(x=activity, y = log2.bmi)) + geom_boxplot() + 
+  theme(axis.text.x = element_text(angle=45),axis.text=element_text(size=16),title =element_text(size=18, face='bold'),axis.title=element_text(size=16,face="bold")) + 
+  labs(x="Moderate Activities At Least 10 min Continuously per Week", y="log2.bmi") + 
+  ggtitle("bmi by Moderate Recreational Activities") 
+grid.arrange(plot1, plot2, plot3, plot4, plot5, plot6, plot7, plot8, plot9, plot10, plot11, plot12, ncol=3)
+```
+
+
+#### Response vs. numeric distribution
+```{r fig.height=10, fig.width=10, fig.align="center", warning=FALSE, echo=FALSE}
+plot1 = ggplot(df_adult, aes(x=age, y=log2.bmi)) + geom_point() + 
+  ggtitle("Age")
+plot3 = ggplot(df_adult, aes(x=famsize, y=log2.bmi)) + geom_point() + 
+  ggtitle("Family Size")
+plot4 = ggplot(df_adult, aes(x=alcoholfrq, y=log2.bmi)) + geom_point() + 
+  ggtitle("Frequency of Alcohol Consumption")
+plot5 = ggplot(df_adult, aes(x=log.grocery, y=log2.bmi)) + geom_point() + 
+  ggtitle("Money Spent on Grocery")
+plot6 =ggplot(df_adult, aes(x=log.eatout, y=log2.bmi)) + geom_point() + 
+  ggtitle("Money Spent Eating Out")
+plot7 = ggplot(df_adult, aes(x=log.delivery, y=log2.bmi)) + geom_point() + 
+  ggtitle("Money Spent on Delivered Food")
+plot8 =ggplot(df_adult, aes(x=meals_nothome, y=log2.bmi)) + geom_point() + 
+  ggtitle("Number of Meals Not Home Prepared")
+plot9 = ggplot(df_adult, aes(x=meals_fastfood, y=log2.bmi)) + geom_point() + 
+  ggtitle("Number of Fast Food Meals")
+plot10 = ggplot(df_adult, aes(x=sleep_hr, y=log2.bmi)) + geom_point() + 
+  ggtitle("Hours of Sleep")
+grid.arrange(plot1, plot3, plot4, plot5, plot6, plot7, plot8, plot9, plot10, ncol=3)
+```          
+
+
+
+### Models
+
+```{r fig.height=3, fig.width=3, fig.align="center"}
+library(Matrix)
+library(glmnet)
+
+library(plotmo)
+library(caret)
+library(lattice)
+
+set.seed(1234)
+# define training control
+train_control <- trainControl(method="cv", number=5)
+
+
+#baseline model
+model1 = lm(log2.bmi~gender+age+race+edu+marriage+famsize+famincome+alcohol12yr+alcoholfrq+log.grocery+log.eatout+log.delivery+milk+meals_nothome+meals_fastfood+depressed+sleep_trouble+activity+tv_hrs+sleep_hr+smoke, data = df_adult)
+
+base_form = formula(model1)
+
+summary(model1)
+plotres(model1, which=3:4, caption = "Base model assumption check")
+
+#baseline model cv
+model1_cv = train(base_form, data=df_adult, method="lm", preProcess="scale", trControl=train_control)
+
+print("Base model cv results:")
+print(paste("RMSE:", model1_cv$results$RMSE, "Rsquared:", model1_cv$results$Rsquared))
+
+```
+
+
+
+```{r}
+#model1a: baseline model step
+set.seed(1234)
+model1a = step(model1, trace = 0, direction = "backward")
+
+summary(model1a)
+plotres(model1a, which=3:4, caption = "model1a assumption check")
+
+base_1a_form = formula(model1a)
+#baseline model cv
+model1a_cv = train(base_1a_form, data=df_adult, method="lm", preProcess="scale", trControl=train_control)
+
+print("model1a cv results:")
+print(paste("RMSE:", model1a_cv$results$RMSE, "Rsquared:", model1a_cv$results$Rsquared))
+```
+
+
+```{r}
+#compare model1 with model1a
+set.seed(1234)
+anova(model1a, model1)
+```
+
+
+
+```{r fig.height=3, fig.width=3, fig.align="center"}
+#model1b: add sleep^2 to model1a
+set.seed(1234)
+
+base_sleep_form = update.formula(base_1a_form, . ~. + I(sleep_hr^2))
+
+model1b = lm(base_sleep_form, data = df_adult)
+summary(model1b)
+plotres(model1b, which=3:4, caption = "model1a plus sleephour^2 assumption check")
+
+model1b_form = formula(model1b)
+
+#model1b cv
+model1b_cv = train(base_sleep_form, data=df_adult, method="lm", preProcess="scale", trControl=train_control)
+
+
+print("model1a plus sleephour^2 cv results:")
+print(paste("RMSE:", model1b_cv$results$RMSE, "Rsquared:", model1b_cv$results$Rsquared))
+
+
+
+```
+
+
+```{r}
+#compare model1b to model1a
+set.seed(1234)
+anova(model1a, model1b)
+```
+
+```{r fig.height=3, fig.width=3, fig.align="center"}
+#model1c: add famsize interactions
+set.seed(1234)
+model1c = lm(update.formula(model1b_form, .~.+famsize*(famincome+log.grocery+log.eatout+log.delivery)), data = df_adult)
+
+summary(model1c)
+extractAIC(model1c)
+plotres(model1c, which=3:4, caption = "model1c assumption check")
+
+
+#model1c cv
+model1c_cv = train(formula(model1c), data=df_adult, method="lm", preProcess="scale", trControl=train_control)
+
+print("Model1c cv results:")
+print(paste("RMSE:", model1c_cv$results$RMSE, "Rsquared:", model1c_cv$results$Rsquared))
+
+
+```
+```{r}
+#compare model1c to model1b
+set.seed(1234)
+anova(model1b, model1c)
+```
+
+
+
+```{r fig.height=3, fig.width=3, fig.align="center", warning=FALSE, echo=FALSE}
+#model1d: the model with all the 2 way interactions(including sleep_hr2) after step()
+set.seed(1234)
+full_intr_form = update(model1b_form, .~ (.)^2)
+model_interact = lm(full_intr_form, data = df_adult)
+
+model1d = step(lm(log2.bmi ~ 1, data = df_adult), scope = list(upper = model_interact), direction = "forward", trace = 0)
+summary(model1d)
+plotres(model1d, which=3:4, caption = "model1d assumption check")
+
+#model1d cv
+model1d_cv = train(formula(model1d), data=df_adult, method="lm", preProcess="scale", trControl=train_control)
+
+print("model1d cv results:")
+print(paste("RMSE:", model1d_cv$results$RMSE, "Rsquared:", model1d_cv$results$Rsquared))
+```
+
+
+```{r}
+#compare model1d to model1b
+set.seed(1234)
+anova(model1b, model1d)
+```
+
+
+
+
+```{r, fig.height=3, fig.width=3, fig.align="center"}
+
+#lasso cv
+set.seed(1234)
+x.lasso = model.matrix(update(full_intr_form, .~.+0), data=df_adult)
+cv_lasso = cv.glmnet(x.lasso, df_adult$log2.bmi, nfolds = 5)
+
+lasso.lambda.min = cv_lasso$lambda.min
+lasso.mse.min = min(cv_lasso$cvm)
+
+coef.lasso = coef(cv_lasso, s = "lambda.min")
+nonzero_coef_lasso = cbind(rownames(coef.lasso)[which(coef.lasso != 0)], coef.lasso[which(coef.lasso != 0)])
+
+#lasso 
+model_lasso = glmnet(x.lasso, df_adult$log2.bmi, lambda = lasso.lambda.min)
+
+#plot
+plot(cv_lasso, main="Lasso: MSE vs. lambda")
+summary(model_lasso)
+plotres(model_lasso, which=3:4, caption = "Full interaction Lasso model assumption check")
+```
+
+
+```{r}
+lasso.mse.min
+```
+
+
+
+```{r, fig.height=3, fig.width=3, fig.align="center"}
+#ridge cv
+set.seed(1234)
+x.ridge = model.matrix(update(full_intr_form, .~.+0), data=df_adult)
+cv_ridge = cv.glmnet(x.ridge, df_adult$log2.bmi, alpha = 0, nfolds = 5)
+
+ridge.lambda.min = cv_ridge$lambda.min
+ridge.mse.min = min(cv_ridge$cvm)
+
+coef.ridge = coef(cv_ridge, s = "lambda.min")
+nonzero_coef_ridge = cbind(rownames(coef.ridge)[which(coef.ridge != 0)], coef.ridge[which(coef.ridge != 0)])
+
+#ridge
+model_ridge = glmnet(x.ridge, df_adult$log2.bmi, lambda = ridge.lambda.min, alpha = 0)
+
+#plot
+plot(cv_ridge, main="Ridge: MSE vs. lambda")
+summary(model_ridge)
+plotres(model_ridge, which=3:4, caption = "Full interaction Lasso model \n assumption check")
+```
+
+
+```{r}
+ridge.mse.min
+```
+
+
+
+
+```{r, fig.height=3, fig.width=3, fig.align="center"}
+#elastic net cv
+set.seed(1234)
+x.elastic = model.matrix(update(full_intr_form, .~.+0), data=df_adult)
+cv_elastic = cv.glmnet(x.elastic, df_adult$log2.bmi, nfolds = 5)
+
+elastic.lambda.min = cv_elastic$lambda.min
+elastic.mse.min = min(cv_elastic$cvm)
+
+coef.elastic = coef(cv_elastic, s = "lambda.min")
+nonzero_coef_elastic = cbind(rownames(coef.elastic)[which(coef.elastic != 0)], coef.elastic[which(coef.elastic != 0)])
+
+#elastic net 
+model_elastic = glmnet(x.elastic, df_adult$log2.bmi, lambda = elastic.lambda.min, alpha=0.5)
+
+#plot
+plot(cv_elastic, main="Elastic net: MSE vs. lambda")
+summary(model_elastic)
+plotres(model_elastic, which=3:4, caption = "Full interaction Elastic model \n assumption check")
+
+```
+
+
+```{r}
+elastic.mse.min
+```
+
+
+```{r}
+# best model (model1d) bootstraping 
+
+# Bootstrap 95% CI for regression coefficients 
+set.seed(1234)
+library(boot)
+# function to obtain regression weights 
+bs <- function(formula, data, indices) {
+  d <- data[indices,] # allows boot to select sample 
+  fit <- lm(formula, data=d)
+  return(coef(fit)) 
+} 
+# bootstrapping with 1000 replications 
+nsim = 500
+results <- boot(data=df_adult, statistic=bs, R=nsim, formula=formula(model1d))
+names_ = names(coef(lm(formula(model1d), data=df_adult)))
+
+ci = data.frame(matrix(ncol = 3, nrow = length(names_)))
+
+print("the following coef is statistically significant from 0:")
+for (i in c(1:85, 88:90)){
+  ci[i, 1:2] = boot.ci(boot.out=results, conf = 0.95, type = "perc", index= i)$perc[,4:5]
+  ci[i, 3] = (0 < ci[i, 2]) & (0 > ci[i, 1]) 
+  if (ci[i, 3] == FALSE) {print(names_[i])}
+}
+
+```
+
+
+```{r, message=FALSE, warning=FALSE, echo=FALSE}
+library(nnet)
+set.seed(1234)
+
+#multinomial classification
+## -- Base model
+multinomial_base_form = update.formula(formula(base_form), bmi_class~.)
+multinomial_base_cv = train(multinomial_base_form, data=df_adult, method="multinom", preProcess="scale", trControl=train_control, trace=0)
+
+print(paste("Multinomial classification base model cv accuracy:", max(multinomial_base_cv$results$Accuracy)))
+
+## -- Base sleep model
+multinomial_base_sleep_form = update.formula(formula(base_sleep_form), bmi_class~.)
+multinomial_base_sleep_cv = train(multinomial_base_sleep_form, data=df_adult, method="multinom", preProcess="scale", trControl=train_control, trace=0)
+
+print(paste("Multinomial classification base sleep model cv accuracy:", max(multinomial_base_sleep_cv$results$Accuracy)))
+
+## -- forward selected full interaction model
+multinomial_1d =  update.formula(formula(model1d), bmi_class~.)
+
+multinomial_1d_cv = train(multinomial_1d, data=df_adult, method="multinom", preProcess="scale", trControl=train_control, trace=0)
+
+print(paste("Multinomial classification model1d cv results:", max(multinomial_1d_cv$results$Accuracy)))
+
+
+multinomial_base_form = update.formula(formula(base_form), bmi_class~.)
+multinomial_base_cv = train(multinomial_base_form, data=df_adult, method="multinom", preProcess="scale", trControl=train_control, trace=0)
+
+print(paste("Ordinal classification base model cv accuracy:", max(multinomial_base_cv$results$Accuracy)))
+
+library(ordinalNet)
+
+#ordinal logistic regression
+## -- Base model
+x = model.matrix(update.formula(multinomial_base_form, .~.+0), data=df_adult)
+
+ordinal_base_cv = ordinalNetCV(x, as.factor(df_adult$bmi_class), lambdaVals=c(0), nFolds=5)
+
+print(paste("Ordinal classification base model cv accuracy:", 1-mean(summary(ordinal_base_cv)$misclass)))
+
+
+```
+
+
