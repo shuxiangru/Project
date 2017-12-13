@@ -345,9 +345,7 @@ grid.arrange(plot1, plot3, plot4, plot5, plot6, plot7, plot8, plot9, plot10, nco
 ```          
 
 
-
-### Models
-
+## Appendix III: Models
 ```{r fig.height=3, fig.width=3, fig.align="center"}
 library(Matrix)
 library(glmnet)
