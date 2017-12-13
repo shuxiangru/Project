@@ -401,6 +401,7 @@ library(plotmo)
 library(caret)
 library(lattice)
 
+set.seed(1234)
 # define training control
 train_control <- trainControl(method="cv", number=5)
 
@@ -422,6 +423,7 @@ print(paste("RMSE:", model1_cv$results$RMSE, "Rsquared:", model1_cv$results$Rsqu
 ```
 ```{r}
 #model1a: baseline model step
+set.seed(1234)
 model1a = step(model1, trace = 0, direction = "backward")
 
 summary(model1a)
@@ -436,11 +438,13 @@ print(paste("RMSE:", model1a_cv$results$RMSE, "Rsquared:", model1a_cv$results$Rs
 ```
 ```{r}
 #compare model1 with model1a
+set.seed(1234)
 anova(model1a, model1)
 ```
 
 ```{r fig.height=3, fig.width=3, fig.align="center"}
 #model1b: add sleep^2 to model1a
+set.seed(1234)
 
 base_sleep_form = update.formula(base_1a_form, . ~. + I(sleep_hr^2))
 
@@ -462,11 +466,13 @@ print(paste("RMSE:", model1b_cv$results$RMSE, "Rsquared:", model1b_cv$results$Rs
 ```
 ```{r}
 #compare model1b to model1a
+set.seed(1234)
 anova(model1a, model1b)
 ```
 
 ```{r fig.height=3, fig.width=3, fig.align="center"}
 #model1c: add famsize interactions
+set.seed(1234)
 model1c = lm(update.formula(model1b_form, .~.+famsize*(famincome+log.grocery+log.eatout+log.delivery)), data = df_adult)
 
 summary(model1c)
@@ -484,11 +490,13 @@ print(paste("RMSE:", model1c_cv$results$RMSE, "Rsquared:", model1c_cv$results$Rs
 ```
 ```{r}
 #compare model1c to model1b
+set.seed(1234)
 anova(model1b, model1c)
 ```
 
 ```{r fig.height=3, fig.width=3, fig.align="center", warning=FALSE, echo=FALSE}
 #model1d: the model with all the 2 way interactions(including sleep_hr2) after step()
+set.seed(1234)
 full_intr_form = update(model1b_form, .~ (.)^2)
 model_interact = lm(full_intr_form, data = df_adult)
 
@@ -507,6 +515,7 @@ print(paste("RMSE:", model1d_cv$results$RMSE, "Rsquared:", model1d_cv$results$Rs
 
 ```{r}
 #compare model1d to model1b
+set.seed(1234)
 anova(model1b, model1d)
 ```
 
@@ -516,6 +525,7 @@ anova(model1b, model1d)
 ```{r, fig.height=3, fig.width=3, fig.align="center"}
 
 #lasso cv
+set.seed(1234)
 x.lasso = model.matrix(update(full_intr_form, .~.+0), data=df_adult)
 cv_lasso = cv.glmnet(x.lasso, df_adult$log2.bmi, nfolds = 5)
 
@@ -541,6 +551,7 @@ lasso.mse.min
 
 ```{r, fig.height=3, fig.width=3, fig.align="center"}
 #ridge cv
+set.seed(1234)
 x.ridge = model.matrix(update(full_intr_form, .~.+0), data=df_adult)
 cv_ridge = cv.glmnet(x.ridge, df_adult$log2.bmi, alpha = 0, nfolds = 5)
 
@@ -567,6 +578,7 @@ ridge.mse.min
 
 ```{r, fig.height=3, fig.width=3, fig.align="center"}
 #elastic net cv
+set.seed(1234)
 x.elastic = model.matrix(update(full_intr_form, .~.+0), data=df_adult)
 cv_elastic = cv.glmnet(x.elastic, df_adult$log2.bmi, nfolds = 5)
 
@@ -586,9 +598,15 @@ plotres(model_elastic, which=3:4, caption = "Full interaction Elastic model \n a
 
 ```
 ```{r}
+elastic.mse.min
+```
+
+
+```{r}
 # best model (model1d) bootstraping 
 
 # Bootstrap 95% CI for regression coefficients 
+set.seed(1234)
 library(boot)
 # function to obtain regression weights 
 bs <- function(formula, data, indices) {
@@ -615,7 +633,7 @@ for (i in c(1:85, 88:90)){
 ```{r, message=FALSE, warning=FALSE, echo=FALSE}
 library(nnet)
 
-
+set.seed(1234)
 #multinomial classification
 ## -- Base model
 multinomial_base_form = update.formula(formula(base_form), bmi_class~.)
