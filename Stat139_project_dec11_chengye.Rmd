@@ -421,6 +421,9 @@ print("Base model cv results:")
 print(paste("RMSE:", model1_cv$results$RMSE, "Rsquared:", model1_cv$results$Rsquared))
 
 ```
+
+
+
 ```{r}
 #model1a: baseline model step
 set.seed(1234)
@@ -436,11 +439,15 @@ model1a_cv = train(base_1a_form, data=df_adult, method="lm", preProcess="scale",
 print("model1a cv results:")
 print(paste("RMSE:", model1a_cv$results$RMSE, "Rsquared:", model1a_cv$results$Rsquared))
 ```
+
+
 ```{r}
 #compare model1 with model1a
 set.seed(1234)
 anova(model1a, model1)
 ```
+
+
 
 ```{r fig.height=3, fig.width=3, fig.align="center"}
 #model1b: add sleep^2 to model1a
@@ -464,6 +471,8 @@ print(paste("RMSE:", model1b_cv$results$RMSE, "Rsquared:", model1b_cv$results$Rs
 
 
 ```
+
+
 ```{r}
 #compare model1b to model1a
 set.seed(1234)
@@ -480,7 +489,7 @@ extractAIC(model1c)
 plotres(model1c, which=3:4, caption = "model1c assumption check")
 
 
-#model1a cv
+#model1c cv
 model1c_cv = train(formula(model1c), data=df_adult, method="lm", preProcess="scale", trControl=train_control)
 
 print("Model1c cv results:")
@@ -493,6 +502,8 @@ print(paste("RMSE:", model1c_cv$results$RMSE, "Rsquared:", model1c_cv$results$Rs
 set.seed(1234)
 anova(model1b, model1c)
 ```
+
+
 
 ```{r fig.height=3, fig.width=3, fig.align="center", warning=FALSE, echo=FALSE}
 #model1d: the model with all the 2 way interactions(including sleep_hr2) after step()
